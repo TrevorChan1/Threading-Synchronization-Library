@@ -2,6 +2,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <setjmp.h>
 
 /* You can support more threads. At least support this many. */
 #define MAX_THREADS 128
@@ -37,15 +38,16 @@ enum thread_status
  * need one of this per thread.
  */
 struct thread_control_block {
-	/* TODO: add a thread ID */
-	/* TODO: add information about its stack */
+	int tid; //Thread id (will be 0 to 127)
+	void * stackPtr; //Information about the stack
 	/* TODO: add information about its registers */
-	/* TODO: add information about the status (e.g., use enum thread_status) */
-	/* Add other information you need to manage this thread */
+	int status; //Value about thread status (0 for reading, 1 for running)
+	jmp_buf currentContext; //Store jump buffer with current context information
 };
 
 static void schedule(int signal)
 {
+	
 	/* TODO: implement your round-robin scheduler 
 	 * 1. Use setjmp() to update your currently-active thread's jmp_buf
 	 *    You DON'T need to manually modify registers here.
