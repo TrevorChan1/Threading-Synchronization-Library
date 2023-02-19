@@ -52,6 +52,13 @@ struct TCBTable {
 	struct thread_control_block * lastThread;	//Last thread in Round Robin
 };
 
+// Function to free a thread
+void free_thread(struct thread_control_block * thread){
+	free(thread->stackPtr);
+	free(thread->currentContext);
+	free(thread);
+}
+
 // Global thread variables: TCB table with ALL current threads and the currently running thread
 struct TCBTable *TCB;
 
@@ -61,12 +68,34 @@ static void schedule(int signal)
 	// Use setjmp to update currently active thread's jmp_buf
 	setjmp(TCB->currentThread->currentContext);
 
-	
+	// If current thread is done, then free the thread and move on
+	if(TCB->currentThread->status == TS_EXITED){
+		struct thread_control_block * current = TCB->currentThread;
 
-/*
-	 * 2. Determine which is the next thread that should run
-	 * 3. Switch to the next thread (use longjmp on that thread's jmp_buf)
-	 */
+		// If there are no more threads, exit
+		if (current->nextThread == NULL)
+			free(TCB);
+		// If there are more threads, set current to the next one
+		else
+			TCB->currentThread = current->nextThread;
+		
+		// Free the finished thread
+		free_thread(current);
+	}
+	else{
+		// If a next thread exists, set all the pointers and jump to new thread
+		if (TCB->currentThread->nextThread != NULL){
+			// Move from current thread to next thread and move current to last thread
+			TCB->lastThread->nextThread = TCB->currentThread;
+			TCB->lastThread = TCB->currentThread;
+			TCB->lastThread->nextThread = NULL;
+			TCB->currentThread = TCB->currentThread->nextThread;
+
+			// Jump to the next thread
+			longjmp(TCB->currentThread->currentContext, 1);
+		}
+	}
+
 }
 
 
