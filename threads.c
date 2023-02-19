@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <setjmp.h>
+#include <unistd.h>
 
 /* You can support more threads. At least support this many. */
 #define MAX_THREADS 128
@@ -40,21 +41,34 @@ enum thread_status
 struct thread_control_block {
 	int tid; //Thread id (will be 0 to 127)
 	void * stackPtr; //Information about the stack
-	/* TODO: add information about its registers */
-	int status; //Value about thread status (0 for reading, 1 for running)
+	enum thread_status status; //Value about thread status (0 for reading, 1 for running)
 	jmp_buf currentContext; //Store jump buffer with current context information
+	struct thread_control_block * nextThread;
 };
 
+struct TCBTable {
+	int size;	// Keep track of the number of threads (must be <= 128)
+	struct thread_control_block * currentThread; //Current thread being run
+	struct thread_control_block * lastThread;	//Last thread in Round Robin
+};
+
+// Global thread variables: TCB table with ALL current threads and the currently running thread
+struct TCBTable *TCB;
+
+// SIGALRM handler that saves current context and moves onto the next function
 static void schedule(int signal)
 {
+	// Use setjmp to update currently active thread's jmp_buf
+	setjmp(TCB->currentThread->currentContext);
+
 	
-	/* TODO: implement your round-robin scheduler 
-	 * 1. Use setjmp() to update your currently-active thread's jmp_buf
-	 *    You DON'T need to manually modify registers here.
+
+/*
 	 * 2. Determine which is the next thread that should run
 	 * 3. Switch to the next thread (use longjmp on that thread's jmp_buf)
 	 */
 }
+
 
 static void scheduler_init()
 {
@@ -66,6 +80,21 @@ static void scheduler_init()
 	 *   Just make sure they are correctly referenced in your TCB.
 	 * - Set up your timers to call schedule() at a 50 ms interval (SCHEDULER_INTERVAL_USECS)
 	 */
+
+	// Initialize timer: Every 50ms sends SIGALRM
+	if (ualarm(50, 50) < 0){
+		printf("ERROR: Timer not set\n");
+		exit(-1);
+	}
+
+	// Set signal handler to schedule
+	struct sigaction sigAlrmAction;
+	memset(&sigAlrmAction, 0, sizeof(sigAlrmAction));
+	sigemptyset(&sigAlrmAction.sa_mask);
+	sigAlrmAction.sa_flags = 0;
+	sigAlrmAction.sa_handler = schedule;
+	sigaction(SIGCHLD, &sigAlrmAction, NULL);
+
 }
 
 int pthread_create(
@@ -79,7 +108,7 @@ int pthread_create(
 		is_first_call = false;
 		scheduler_init();
 	}
-
+	
 	/* TODO: Return 0 on successful thread creation, non-zero for an error.
 	 *       Be sure to set *thread on success.
 	 * Hints:
