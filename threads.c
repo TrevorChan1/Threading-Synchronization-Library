@@ -46,11 +46,35 @@ struct thread_control_block {
 	struct thread_control_block * nextThread;
 };
 
-struct TCBTable {
-	int size;	// Keep track of the number of threads (must be <= 128)
-	struct thread_control_block * currentThread; //Current thread being run
-	struct thread_control_block * lastThread;	//Last thread in Round Robin
-};
+struct thread_control_block *TCBTable[MAX_THREADS];
+int front = -1;
+int end = -1;
+
+// Enqueue function for Queue of TCB's
+void enQueue(struct thread_control_block *thread){
+	// If the number of threads is already 128, print error
+	if (end == MAX_THREADS -1)
+		printf("ERROR: Maximum number of threads reached");
+	// Set front to be 0 if first time queueing
+	if (front == -1)
+		front = 0;
+	TCBTable[++end] = thread;
+}
+
+// Dequeue function for Queue of TCB's
+void deQueue(){
+	// If trying to remove from empty, print error
+	if (front == -1)
+		print("ERROR: No threads open\n");
+	free_thread(TCBTable[front]);
+	// If current is at the end, reinitialize all values to -1
+	if (++front > end){
+		front = -1;
+		end = -1;
+	}
+	
+}
+
 
 // Function to free a thread
 void free_thread(struct thread_control_block * thread){
@@ -94,6 +118,7 @@ static void schedule(int signal)
 			// Jump to the next thread
 			longjmp(TCB->currentThread->currentContext, 1);
 		}
+		// If there is no more next threads but the current thread is not done, just keep running
 	}
 
 }
@@ -101,6 +126,14 @@ static void schedule(int signal)
 
 static void scheduler_init()
 {
+
+	// Allocate memory for the TCB table with MAX_THREADS entries
+	TCB = (struct TCBTable *) malloc(sizeof(struct TCBTable) + sizeof(struct thread_control_block) * MAX_THREADS);
+	TCB->size = 0;
+	TCB->currentThread = (struct thread_control_block *) malloc(sizeof(struct thread_control_block));
+	TCB->currentThread->nextThread = NULL;
+	TCB->currentThread->nextThread->status = TS_RUNNING;
+	
 	/* TODO: do everything that is needed to initialize your scheduler. For example:
 	 * - Allocate/initialize global threading data structures
 	 * - Create a TCB for the main thread. Note: This is less complicated
@@ -109,7 +142,7 @@ static void scheduler_init()
 	 *   Just make sure they are correctly referenced in your TCB.
 	 * - Set up your timers to call schedule() at a 50 ms interval (SCHEDULER_INTERVAL_USECS)
 	 */
-
+	
 	// Initialize timer: Every 50ms sends SIGALRM
 	if (ualarm(50, 50) < 0){
 		printf("ERROR: Timer not set\n");
