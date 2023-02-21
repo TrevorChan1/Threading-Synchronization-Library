@@ -39,7 +39,7 @@ enum thread_status
  * need one of this per thread.
  */
 struct thread_control_block {
-	int tid; //Thread id (will be 0 to 127)
+	pthread_t tid; //Thread id (will be 0 to 127)
 	void * stackPtr; //Information about the stack
 	enum thread_status status; //Value about thread status (0 for reading, 1 for running)
 	jmp_buf currentContext; //Store jump buffer with current context information
@@ -84,7 +84,13 @@ void free_thread(struct thread_control_block * thread){
 }
 
 // Global thread variables: TCB table with ALL current threads and the currently running thread
-struct TCBTable *TCB;
+struct TCBTable {
+	int size;
+	struct thread_control_block * currentThread;
+	struct thread_control_block * lastThread;
+};
+
+struct TCBTable * TCB;
 
 // SIGALRM handler that saves current context and moves onto the next function
 static void schedule(int signal)
@@ -123,7 +129,14 @@ static void schedule(int signal)
 
 }
 
-
+/* TODO: do everything that is needed to initialize your scheduler. For example:
+* - Allocate/initialize global threading data structures
+* - Create a TCB for the main thread. Note: This is less complicated
+*   than the TCBs you create for all other threads. In this case, your
+*   current stack and registers are already exactly what they need to be!
+*   Just make sure they are correctly referenced in your TCB.
+* - Set up your timers to call schedule() at a 50 ms interval (SCHEDULER_INTERVAL_USECS)
+*/
 static void scheduler_init()
 {
 
@@ -134,17 +147,10 @@ static void scheduler_init()
 	TCB->currentThread->nextThread = NULL;
 	TCB->currentThread->nextThread->status = TS_RUNNING;
 	
-	/* TODO: do everything that is needed to initialize your scheduler. For example:
-	 * - Allocate/initialize global threading data structures
-	 * - Create a TCB for the main thread. Note: This is less complicated
-	 *   than the TCBs you create for all other threads. In this case, your
-	 *   current stack and registers are already exactly what they need to be!
-	 *   Just make sure they are correctly referenced in your TCB.
-	 * - Set up your timers to call schedule() at a 50 ms interval (SCHEDULER_INTERVAL_USECS)
-	 */
+
 	
 	// Initialize timer: Every 50ms sends SIGALRM
-	if (ualarm(50, 50) < 0){
+	if (ualarm(SCHEDULER_INTERVAL_USECS, SCHEDULER_INTERVAL_USECS) < 0){
 		printf("ERROR: Timer not set\n");
 		exit(-1);
 	}
@@ -170,7 +176,14 @@ int pthread_create(
 		is_first_call = false;
 		scheduler_init();
 	}
+
+
+
+	// Create the stack: Dynamically allocate memory
+	void * stack = malloc(THREAD_STACK_SIZE);
 	
+
+
 	/* TODO: Return 0 on successful thread creation, non-zero for an error.
 	 *       Be sure to set *thread on success.
 	 * Hints:
@@ -229,11 +242,12 @@ void pthread_exit(void *value_ptr)
 
 pthread_t pthread_self(void)
 {
+
 	/* TODO: Return the current thread instead of -1
 	 * Hint: this function can be implemented in one line, by returning
 	 * a specific variable instead of -1.
 	 */
-	return -1;
+	return TCB->currentThread->tid;
 }
 
 /* Don't implement main in this file!
