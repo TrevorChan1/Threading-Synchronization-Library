@@ -91,41 +91,32 @@ struct TCBTable {
 };
 
 struct TCBTable * TCB;
+void * stackToFree = NULL;
 
 // SIGALRM handler that saves current context and moves onto the next function
 static void schedule(int signal)
 {
+	// Free any exited threads' stacks (done here to not have free while use)
+	if (stackToFree){
+		free(stackToFree);
+		stackToFree = NULL;
+	}
+
 	// Use setjmp to update currently active thread's jmp_buf
 	setjmp(TCB->currentThread->currentContext);
 
-	// If current thread is done, then free the thread and move on
-	if(TCB->currentThread->status == TS_EXITED){
-		struct thread_control_block * current = TCB->currentThread;
-
-		// If there are no more threads, exit
-		if (current->nextThread == NULL)
-			free(TCB);
-		// If there are more threads, set current to the next one
-		else
-			TCB->currentThread = current->nextThread;
-		
-		// Free the finished thread (don't need to free stack or context since those are freed in thread exit)
-		free(current);
+	// Don't care about status because assuming all exited ones are handled in pthread_exit()
+	// If a next thread exists, set all the pointers and jump to new thread
+	if (TCB->currentThread->nextThread != NULL){
+		// Move from current thread to next thread and move current to last thread
+		TCB->lastThread->nextThread = TCB->currentThread;
+		TCB->lastThread = TCB->currentThread;
+		TCB->lastThread->nextThread = NULL;
+		TCB->currentThread = TCB->currentThread->nextThread;
+		// Jump to the next thread
+		longjmp(TCB->currentThread->currentContext, 1);
 	}
-	else{
-		// If a next thread exists, set all the pointers and jump to new thread
-		if (TCB->currentThread->nextThread != NULL){
-			// Move from current thread to next thread and move current to last thread
-			TCB->lastThread->nextThread = TCB->currentThread;
-			TCB->lastThread = TCB->currentThread;
-			TCB->lastThread->nextThread = NULL;
-			TCB->currentThread = TCB->currentThread->nextThread;
-
-			// Jump to the next thread
-			longjmp(TCB->currentThread->currentContext, 1);
-		}
-		// If there is no more next threads but the current thread is not done, just keep running
-	}
+	// If there are no more next threads, just continue running the current one
 
 }
 
@@ -178,9 +169,12 @@ int pthread_create(
 
 
 	// Create the stack: Dynamically allocate memory
-	void * stack = malloc(THREAD_STACK_SIZE);
-	
+	int * stackPtr = (int*) malloc(THREAD_STACK_SIZE);
+	int * topStack = stackPtr + THREAD_STACK_SIZE - 8;
+	topStack = ptr_mangle(&pthread_exit);
 
+	jmp_buf threadBuf;
+	setjmp(threadBuf);
 
 	/* TODO: Return 0 on successful thread creation, non-zero for an error.
 	 *       Be sure to set *thread on success.
