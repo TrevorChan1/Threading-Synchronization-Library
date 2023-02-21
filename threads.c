@@ -76,12 +76,12 @@ void deQueue(){
 }
 
 
-// Function to free a thread
-void free_thread(struct thread_control_block * thread){
-	free(thread->stackPtr);
-	free(thread->currentContext);
-	free(thread);
-}
+// // Function to free a thread
+// void free_thread(struct thread_control_block * thread){
+// 	free(thread->stackPtr);
+// 	free(thread->currentContext);
+// 	free(thread);
+// }
 
 // Global thread variables: TCB table with ALL current threads and the currently running thread
 struct TCBTable {
@@ -109,8 +109,8 @@ static void schedule(int signal)
 		else
 			TCB->currentThread = current->nextThread;
 		
-		// Free the finished thread
-		free_thread(current);
+		// Free the finished thread (don't need to free stack or context since those are freed in thread exit)
+		free(current);
 	}
 	else{
 		// If a next thread exists, set all the pointers and jump to new thread
@@ -147,14 +147,6 @@ static void scheduler_init()
 	TCB->currentThread->nextThread = NULL;
 	TCB->currentThread->nextThread->status = TS_RUNNING;
 	
-
-	
-	// Initialize timer: Every 50ms sends SIGALRM
-	if (ualarm(SCHEDULER_INTERVAL_USECS, SCHEDULER_INTERVAL_USECS) < 0){
-		printf("ERROR: Timer not set\n");
-		exit(-1);
-	}
-
 	// Set signal handler to schedule
 	struct sigaction sigAlrmAction;
 	memset(&sigAlrmAction, 0, sizeof(sigAlrmAction));
@@ -162,6 +154,12 @@ static void scheduler_init()
 	sigAlrmAction.sa_flags = 0;
 	sigAlrmAction.sa_handler = schedule;
 	sigaction(SIGCHLD, &sigAlrmAction, NULL);
+	
+	// Initialize timer: Every 50ms sends SIGALRM
+	if (ualarm(SCHEDULER_INTERVAL_USECS, SCHEDULER_INTERVAL_USECS) < 0){
+		printf("ERROR: Timer not set\n");
+		exit(-1);
+	}
 
 }
 
@@ -227,9 +225,7 @@ int pthread_create(
 	return -1;
 }
 
-void pthread_exit(void *value_ptr)
-{
-	/* TODO: Exit the current thread instead of exiting the entire process.
+/* TODO: Exit the current thread instead of exiting the entire process.
 	 * Hints:
 	 * - Release all resources for the current thread. CAREFUL though.
 	 *   If you free() the currently-in-use stack then do something like
@@ -237,6 +233,14 @@ void pthread_exit(void *value_ptr)
 	 *   can happen.
 	 * - Update the thread's status to indicate that it has exited
 	 */
+void pthread_exit(void *value_ptr)
+{
+	// Free the current thread's registers and stack
+	free(TCB->currentThread->currentContext);
+	free(TCB->currentThread->stackPtr);
+
+	// Set the current thread's status to exited
+	TCB->currentThread->status = TS_EXITED;
 	exit(1);
 }
 
@@ -249,9 +253,3 @@ pthread_t pthread_self(void)
 	 */
 	return TCB->currentThread->tid;
 }
-
-/* Don't implement main in this file!
- * This is a library of functions, not an executable program. If you
- * want to run the functions in this file, create separate test programs
- * that have their own main functions.
- */
