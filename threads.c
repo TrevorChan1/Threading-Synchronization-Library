@@ -4,6 +4,9 @@
 #include <stdbool.h>
 #include <setjmp.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <signal.h>
+#include <string.h>
 
 /* You can support more threads. At least support this many. */
 #define MAX_THREADS 128
@@ -39,48 +42,12 @@ enum thread_status
  * need one of this per thread.
  */
 struct thread_control_block {
-	pthread_t tid; //Thread id (will be 0 to 127)
+	int tid; //Thread id (will be 0 to 127)
 	void * stackPtr; //Information about the stack
 	enum thread_status status; //Value about thread status (0 for reading, 1 for running)
 	jmp_buf currentContext; //Store jump buffer with current context information
 	struct thread_control_block * nextThread;
 };
-
-// struct thread_control_block *TCBTable[MAX_THREADS];
-// int front = -1;
-// int end = -1;
-
-// // Enqueue function for Queue of TCB's
-// void enQueue(struct thread_control_block *thread){
-// 	// If the number of threads is already 128, print error
-// 	if (end == MAX_THREADS -1)
-// 		printf("ERROR: Maximum number of threads reached");
-// 	// Set front to be 0 if first time queueing
-// 	if (front == -1)
-// 		front = 0;
-// 	TCBTable[++end] = thread;
-// }
-
-// // Dequeue function for Queue of TCB's
-// void deQueue(){
-// 	// If trying to remove from empty, print error
-// 	if (front == -1)
-// 		print("ERROR: No threads open\n");
-// 	free_thread(TCBTable[front]);
-// 	// If current is at the end, reinitialize all values to -1
-// 	if (++front > end){
-// 		front = -1;
-// 		end = -1;
-// 	}
-// }
-
-
-// // Function to free a thread
-// void free_thread(struct thread_control_block * thread){
-// 	free(thread->stackPtr);
-// 	free(thread->currentContext);
-// 	free(thread);
-// }
 
 // Global thread variables: TCB table with ALL current threads and the currently running thread
 
@@ -196,11 +163,16 @@ int pthread_create(
 		is_first_call = false;
 		scheduler_init();
 	}
+	if (TCB->size >= 128){
+		*thread = (pthread_t) -1;
+		printf("ERROR: Max number of threads reached\n");
+		return -1;
+	}
 
 	struct thread_control_block * newThread = (struct thread_control_block *) malloc(sizeof(struct thread_control_block));
 	newThread->nextThread = NULL;
 	newThread->status = TS_READY;
-	newThread->tid = TCB->size;
+	newThread->tid = TCB->size++;
 
 	// Create the stack: Dynamically allocate memory
 	void * stackPtr =  malloc(THREAD_STACK_SIZE);
@@ -217,7 +189,7 @@ int pthread_create(
 	newThread->currentContext[0].__jmpbuf[JB_R13] = (unsigned long) arg;
 	newThread->currentContext[0].__jmpbuf[JB_PC] = ptr_mangle( (unsigned long) start_thunk );
 
-	*thread = newThread->tid;
+	*thread = (pthread_t) newThread->tid;
 	return 0;
 }
 
@@ -248,5 +220,5 @@ void pthread_exit(void *value_ptr)
 pthread_t pthread_self(void)
 {
 	// Return tid of current thread
-	return TCB->currentThread->tid;
+	return (pthread_t) TCB->currentThread->tid;
 }
