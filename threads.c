@@ -68,7 +68,7 @@ static void schedule(int signal)
 		free(stackToFree);
 		stackToFree = NULL;
 	}
-
+	(void) ptr_demangle;
 	// Use setjmp to update currently active thread's jmp_buf, if jumped to = no scheduling
 	if(setjmp(TCB->currentThread->currentContext) == 0){
 
