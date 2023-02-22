@@ -92,6 +92,7 @@ struct TCBTable {
 
 struct TCBTable * TCB;
 void * stackToFree = NULL;
+int numThread;
 
 // SIGALRM handler that saves current context and moves onto the next function
 static void schedule(int signal)
@@ -112,14 +113,18 @@ static void schedule(int signal)
 		stackToFree = TCB->currentThread->stackPtr;
 
 		// If there are more threads, set up the next thread. Otherwise, do nothing.
-		if (current->nextThread != NULL)
+		if (current->nextThread != NULL){
 			TCB->currentThread = current->nextThread;
+			TCB->currentThread->status = TS_RUNNING;
+		}
 		
 		// Free the finished thread (don't need to free stack or context since those are freed in thread exit)
 		free(current->currentContext);
 		free(current);
 	}
 	else{
+		TCB->currentThread->status = TS_READY;
+
 		// If a next thread exists, set all the pointers and jump to new thread
 		if (TCB->currentThread->nextThread != NULL){
 			// Move from current thread to next thread and move current to last thread
@@ -127,6 +132,7 @@ static void schedule(int signal)
 			TCB->lastThread = TCB->currentThread;
 			TCB->lastThread->nextThread = NULL;
 			TCB->currentThread = TCB->currentThread->nextThread;
+			TCB->currentThread->status = TS_RUNNING;
 
 			// Jump to the next thread
 			longjmp(TCB->currentThread->currentContext, 1);
@@ -152,7 +158,12 @@ static void scheduler_init()
 	TCB->size = 0;
 	TCB->currentThread = (struct thread_control_block *) malloc(sizeof(struct thread_control_block));
 	TCB->currentThread->nextThread = NULL;
+	TCB->currentThread->stackPtr = NULL;
 	TCB->currentThread->nextThread->status = TS_RUNNING;
+	TCB->currentThread->tid = 0;
+
+	// Set global value of numThread
+	numThread = 1;
 	
 	// Set signal handler to schedule
 	struct sigaction sigAlrmAction;
@@ -168,6 +179,8 @@ static void scheduler_init()
 		exit(-1);
 	}
 
+	// Save context of main thread (current only thread)
+	setjmp(TCB->currentThread->currentContext);
 }
 
 int pthread_create(
