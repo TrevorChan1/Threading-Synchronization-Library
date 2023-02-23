@@ -82,6 +82,11 @@ static void schedule(int signal)
 			if (current->nextThread != NULL){
 				TCB->currentThread = current->nextThread;
 				TCB->currentThread->status = TS_RUNNING;
+				// Initialize timer: Send SIGALRM in 50ms
+				if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
+					printf("ERROR: Timer not set\n");
+					exit(-1);
+				}
 			}
 			
 			// Free the finished thread (don't need to free stack or context since those are freed in thread exit)
