@@ -143,10 +143,10 @@ static void scheduler_init()
 	sigaction(SIGCHLD, &sigAlrmAction, NULL);
 	
 	// Initialize timer: Every 50ms sends SIGALRM
-	//if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
-	//	printf("ERROR: Timer not set\n");
-	//	exit(-1);
-	//}
+	if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
+		printf("ERROR: Timer not set\n");
+		exit(-1);
+	}
 }
 
 int pthread_create(
