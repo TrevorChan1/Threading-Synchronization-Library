@@ -85,7 +85,6 @@ static void schedule(int signal)
 			}
 			
 			// Free the finished thread (don't need to free stack or context since those are freed in thread exit)
-			// free(current->currentContext);
 			free(current);
 		}
 		else{
