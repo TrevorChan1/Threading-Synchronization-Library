@@ -131,6 +131,7 @@ static void scheduler_init()
 	TCB->currentThread->stackPtr = NULL;
 	TCB->currentThread->status = TS_RUNNING;
 	TCB->currentThread->tid = TCB->size++;
+	TCB->lastThread = TCB->currentThread;
 
 	
 	// Set signal handler to schedule
@@ -142,10 +143,10 @@ static void scheduler_init()
 	sigaction(SIGCHLD, &sigAlrmAction, NULL);
 	
 	// Initialize timer: Every 50ms sends SIGALRM
-	if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
-		printf("ERROR: Timer not set\n");
-		exit(-1);
-	}
+	//if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
+	//	printf("ERROR: Timer not set\n");
+	//	exit(-1);
+	//}
 }
 
 int pthread_create(
@@ -175,8 +176,7 @@ int pthread_create(
 
 	// Create the stack: Dynamically allocate memory
 	void * stackPtr =  malloc(THREAD_STACK_SIZE);
-	unsigned long * SP = (unsigned long *) stackPtr + THREAD_STACK_SIZE - 8;
-	*SP = (unsigned long int) &pthread_exit;
+	*(unsigned long *) (stackPtr + THREAD_STACK_SIZE - 8) = (unsigned long) &pthread_exit;
 	newThread->stackPtr = stackPtr;
 	
 
