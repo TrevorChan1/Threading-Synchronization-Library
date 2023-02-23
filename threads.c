@@ -140,7 +140,7 @@ static void scheduler_init()
 	sigemptyset(&sigAlrmAction.sa_mask);
 	sigAlrmAction.sa_flags = 0;
 	sigAlrmAction.sa_handler = schedule;
-	sigaction(SIGCHLD, &sigAlrmAction, NULL);
+	sigaction(SIGALRM, &sigAlrmAction, NULL);
 	
 	// Initialize timer: Every 50ms sends SIGALRM
 	if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
