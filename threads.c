@@ -146,9 +146,6 @@ static void scheduler_init()
 		printf("ERROR: Timer not set\n");
 		exit(-1);
 	}
-
-	// Save context of main thread (current only thread)
-	setjmp(TCB->currentThread->currentContext);
 }
 
 int pthread_create(
@@ -161,6 +158,9 @@ int pthread_create(
 	{
 		is_first_call = false;
 		scheduler_init();
+		// Save context of main thread (current only thread), leave if longjmp'd here
+		if(setjmp(TCB->currentThread->currentContext) != 0)
+			exit(0);
 	}
 	if (TCB->size >= 128){
 		*thread = (pthread_t) -1;
@@ -189,6 +189,10 @@ int pthread_create(
 	newThread->currentContext[0].__jmpbuf[JB_PC] = ptr_mangle( (unsigned long) start_thunk );
 
 	*thread = (pthread_t) newThread->tid;
+
+	TCB->lastThread->nextThread = newThread;
+	TCB->lastThread = newThread;
+
 	return 0;
 }
 
