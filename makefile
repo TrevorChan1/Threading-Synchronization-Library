@@ -14,7 +14,7 @@ test_busy_threads: busy_threads.o threads.o
 
 test_files=./test_busy_threads
 
-.PHONY: clean check checkprogs all
+ .PHONY: clean check checkprogs all
 
 # Build all of the test programs
 checkprogs: $(test_files)
@@ -23,5 +23,5 @@ checkprogs: $(test_files)
 check: checkprogs
 	tests/run_tests.sh $(test_files)
 
-clean:
-	rm -f *.o $(test_files) $(test_o_files)
+# clean:
+#	rm -f *.o $(test_files) $(test_o_files)
