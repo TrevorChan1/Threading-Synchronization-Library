@@ -101,8 +101,8 @@ static void schedule(int signal)
 				// Move from current thread to next thread and move current to last thread
 				TCB->lastThread->nextThread = TCB->currentThread;
 				TCB->lastThread = TCB->currentThread;
-				TCB->lastThread->nextThread = NULL;
 				TCB->currentThread = TCB->currentThread->nextThread;
+				TCB->lastThread->nextThread = NULL;
 				TCB->currentThread->status = TS_RUNNING;
 				// Jump to the next thread
 				longjmp(TCB->currentThread->currentContext, 1);
