@@ -63,6 +63,14 @@ void * stackToFree = NULL;
 // SIGALRM handler that saves current context and moves onto the next function
 static void schedule(int signal)
 {
+	// Reset signal handler
+	struct sigaction sigAlrmAction;
+	memset(&sigAlrmAction, 0, sizeof(sigAlrmAction));
+	sigemptyset(&sigAlrmAction.sa_mask);
+	sigAlrmAction.sa_flags = 0;
+	sigAlrmAction.sa_handler = schedule;
+	sigaction(SIGALRM, &sigAlrmAction, NULL);
+
 	// If a previous thread has exited, free the stack and set global stackToFree to NULL
 	if (stackToFree){
 		free(stackToFree);
@@ -84,10 +92,10 @@ static void schedule(int signal)
 				TCB->currentThread->status = TS_RUNNING;
 				free(current);
 				// Initialize timer: Send SIGALRM in 50ms
-				// if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
-				// 	printf("ERROR: Timer not set\n");
-				// 	exit(-1);
-				// }
+				if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
+					printf("ERROR: Timer not set\n");
+					exit(-1);
+				}
 				// Go to the next thread to be run
 				longjmp(TCB->currentThread->currentContext, 1);
 			}
@@ -97,10 +105,10 @@ static void schedule(int signal)
 		}
 		else{
 			// Initialize timer: Send SIGALRM in 50ms
-			// if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
-			// 	printf("ERROR: Timer not set\n");
-			// 	exit(-1);
-			// }
+			if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
+				printf("ERROR: Timer not set\n");
+				exit(-1);
+			}
 
 			TCB->currentThread->status = TS_READY;
 
@@ -151,7 +159,7 @@ static void scheduler_init()
 	sigaction(SIGALRM, &sigAlrmAction, NULL);
 	
 	// Initialize timer: Every 50ms sends SIGALRM
-	if (ualarm(SCHEDULER_INTERVAL_USECS, SCHEDULER_INTERVAL_USECS) < 0){
+	if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
 		printf("ERROR: Timer not set\n");
 		exit(-1);
 	}
@@ -216,7 +224,7 @@ int pthread_create(
 void pthread_exit(void *value_ptr)
 {
 	// Cancel any current alarms
-	// ualarm(0,0);
+	ualarm(0,0);
 	// Set the current thread's status to exited
 	TCB->currentThread->status = TS_EXITED;
 
