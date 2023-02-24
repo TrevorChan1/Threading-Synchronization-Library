@@ -166,7 +166,7 @@ int pthread_create(
 		scheduler_init();
 		// Save context of main thread (current only thread), leave if longjmp'd here
 		if(setjmp(TCB->currentThread->currentContext) != 0)
-			exit(0);
+			return 0;
 	}
 	if (TCB->size >= 128){
 		*thread = (pthread_t) -1;
@@ -197,6 +197,7 @@ int pthread_create(
 
 	TCB->lastThread->nextThread = newThread;
 	TCB->lastThread = newThread;
+	TCB->lastThread->nextThread = NULL;
 
 	return 0;
 }
@@ -218,9 +219,7 @@ void pthread_exit(void *value_ptr)
 
 	// Run schedule to free values and set the next thread to be run
 	schedule(0);
-	printf("I AM AN EXITY BOY YEEEHAW");
-	// Exit with value 1	
-	exit(1);
+	
 }
 
 /* TODO: Return the current thread instead of -1
