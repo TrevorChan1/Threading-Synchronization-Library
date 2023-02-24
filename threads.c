@@ -71,7 +71,7 @@ static void schedule(int signal)
 	(void) ptr_demangle;
 	// Use setjmp to update currently active thread's jmp_buf, if jumped to = no scheduling
 	if(setjmp(TCB->currentThread->currentContext) == 0){
-
+	
 		// If current thread is done, then free the thread and move on
 		if(TCB->currentThread->status == TS_EXITED){
 			struct thread_control_block * current = TCB->currentThread;
@@ -216,7 +216,7 @@ int pthread_create(
 void pthread_exit(void *value_ptr)
 {
 	// Cancel any current alarms
-	ualarm(0,0);
+	// ualarm(0,0);
 	// Set the current thread's status to exited
 	TCB->currentThread->status = TS_EXITED;
 
