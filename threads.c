@@ -89,7 +89,7 @@ static void schedule(int signal)
 					exit(-1);
 				}
 				// Go to the next thread to be run
-				longjmp(TCB->currentThread->currentContext);
+				longjmp(TCB->currentThread->currentContext, 1);
 			}
 			
 			// Free the finished thread (don't need to free stack or context since those are freed in thread exit)
@@ -222,7 +222,8 @@ void pthread_exit(void *value_ptr)
 
 	// Run schedule to free values and set the next thread to be run
 	schedule(0);
-	
+	// No more threads to jump to => exit
+	exit(0);
 }
 
 /* TODO: Return the current thread instead of -1
