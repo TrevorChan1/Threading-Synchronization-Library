@@ -218,7 +218,7 @@ void pthread_exit(void *value_ptr)
 
 	// Run schedule to free values and set the next thread to be run
 	schedule(0);
-
+	printf("I AM AN EXITY BOY YEEEHAW");
 	// Exit with value 1	
 	exit(1);
 }
