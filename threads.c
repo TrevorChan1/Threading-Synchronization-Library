@@ -120,7 +120,7 @@ static void schedule(int sig)
 		}
 	}
 	//Reset schedule as the signal handler
-	// signal(SIGALRM, schedule);
+	signal(SIGALRM, schedule);
 }
 
 /* TODO: do everything that is needed to initialize your scheduler. For example:
