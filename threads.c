@@ -61,24 +61,17 @@ struct TCBTable * TCB;
 void * stackToFree = NULL;
 
 // SIGALRM handler that saves current context and moves onto the next function
-static void schedule(int signal)
+static void schedule(int sig)
 {
-	// Reset signal handler
-	struct sigaction sigAlrmAction;
-	memset(&sigAlrmAction, 0, sizeof(sigAlrmAction));
-	sigemptyset(&sigAlrmAction.sa_mask);
-	sigAlrmAction.sa_flags = 0;
-	sigAlrmAction.sa_handler = schedule;
-	sigaction(SIGALRM, &sigAlrmAction, NULL);
-
 	// If a previous thread has exited, free the stack and set global stackToFree to NULL
 	if (stackToFree){
 		free(stackToFree);
 		stackToFree = NULL;
 	}
+	
 	(void) ptr_demangle;
 	// Use setjmp to update currently active thread's jmp_buf, if jumped to = no scheduling
-	if(setjmp(TCB->currentThread->currentContext) == 0){
+	if(sigsetjmp(TCB->currentThread->currentContext, 1) == 0){
 	
 		// If current thread is done, then free the thread and move on
 		if(TCB->currentThread->status == TS_EXITED){
@@ -97,7 +90,7 @@ static void schedule(int signal)
 					exit(-1);
 				}
 				// Go to the next thread to be run
-				longjmp(TCB->currentThread->currentContext, 1);
+				siglongjmp(TCB->currentThread->currentContext, 1);
 			}
 			
 			// Free the finished thread (don't need to free stack or context since those are freed in thread exit)
@@ -121,12 +114,13 @@ static void schedule(int signal)
 				TCB->lastThread->nextThread = NULL;
 				TCB->currentThread->status = TS_RUNNING;
 				// Jump to the next thread
-				longjmp(TCB->currentThread->currentContext, 1);
+				siglongjmp(TCB->currentThread->currentContext, 1);
 			}
 			// If there is no more next threads but the current thread is not done, just keep running
 		}
-		
 	}
+	//Reset schedule as the signal handler
+	// signal(SIGALRM, schedule);
 }
 
 /* TODO: do everything that is needed to initialize your scheduler. For example:
@@ -176,7 +170,7 @@ int pthread_create(
 		is_first_call = false;
 		scheduler_init();
 		// Save context of main thread (current only thread), leave if longjmp'd here
-		if(setjmp(TCB->currentThread->currentContext) != 0)
+		if(sigsetjmp(TCB->currentThread->currentContext, 1) != 0)
 			return 0;
 	}
 	if (TCB->size >= 128){
@@ -197,7 +191,7 @@ int pthread_create(
 	
 
 	//ptr mangle start_thunk and the pthread_exit thing
-	setjmp(newThread->currentContext);
+	sigsetjmp(newThread->currentContext, 1);
 
 	newThread->currentContext[0].__jmpbuf[JB_RSP] = ptr_mangle( (unsigned long) stackPtr + THREAD_STACK_SIZE - 8);
 	newThread->currentContext[0].__jmpbuf[JB_R12] = (unsigned long) start_routine;
