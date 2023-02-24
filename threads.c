@@ -63,6 +63,11 @@ void * stackToFree = NULL;
 // SIGALRM handler that saves current context and moves onto the next function
 static void schedule(int signal)
 {
+	// Initialize timer: Send SIGALRM in 50ms
+			if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
+				printf("ERROR: Timer not set\n");
+				exit(-1);
+			}
 	// If a previous thread has exited, free the stack and set global stackToFree to NULL
 	if (stackToFree){
 		free(stackToFree);
@@ -216,7 +221,7 @@ int pthread_create(
 void pthread_exit(void *value_ptr)
 {
 	// Cancel any current alarms
-	// ualarm(0,0);
+	ualarm(0,0);
 	// Set the current thread's status to exited
 	TCB->currentThread->status = TS_EXITED;
 
