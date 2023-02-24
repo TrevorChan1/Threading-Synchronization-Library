@@ -211,6 +211,8 @@ int pthread_create(
 */
 void pthread_exit(void *value_ptr)
 {
+	// Cancel any current alarms
+	ualarm(0,0);
 	// Set the current thread's status to exited
 	TCB->currentThread->status = TS_EXITED;
 
