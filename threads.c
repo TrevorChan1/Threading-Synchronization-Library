@@ -143,7 +143,7 @@ static void schedule(int sig)
 static void scheduler_init()
 {
 	// Allocate memory for the TCB table with MAX_THREADS entries
-	TCB = (struct TCBTable *) malloc(sizeof(struct TCBTable) + sizeof(struct thread_control_block) * MAX_THREADS);
+	TCB = (struct TCBTable *) malloc(sizeof(struct TCBTable));
 	TCB->size = 0;
 	TCB->currentThread = (struct thread_control_block *) malloc(sizeof(struct thread_control_block));
 	TCB->currentThread->nextThread = NULL;
@@ -221,20 +221,20 @@ int pthread_create(
 	}
 
 	// Create the stack: Dynamically allocate memory
-	void * stackPtr =  malloc(THREAD_STACK_SIZE);
-	*(unsigned long *) (stackPtr + THREAD_STACK_SIZE - 8) = (unsigned long) &pthread_exit;
-	newThread->stackPtr = stackPtr;
+	void * stackPtr2 =  malloc(THREAD_STACK_SIZE);
+	*(unsigned long *) (stackPtr2 + THREAD_STACK_SIZE - 8) = (unsigned long) &pthread_exit;
+	newThread->stackPtr = stackPtr2;
 
 	//ptr mangle start_thunk and the pthread_exit thing
 	sigsetjmp(newThread->currentContext, 1);
 
-	newThread->currentContext[0].__jmpbuf[JB_RSP] = ptr_mangle( (unsigned long) stackPtr + THREAD_STACK_SIZE - 8);
+	newThread->currentContext[0].__jmpbuf[JB_RSP] = ptr_mangle( (unsigned long) stackPtr2 + THREAD_STACK_SIZE - 8);
 	newThread->currentContext[0].__jmpbuf[JB_R12] = (unsigned long) start_routine;
 	newThread->currentContext[0].__jmpbuf[JB_R13] = (unsigned long) arg;
 	newThread->currentContext[0].__jmpbuf[JB_PC] = ptr_mangle( (unsigned long) start_thunk );
 
 	*thread = (pthread_t) newThread->tid;
-	free(stackPtr);
+	// free(stackPtr);
 	TCB->lastThread->nextThread = newThread;
 	TCB->lastThread = newThread;
 	TCB->lastThread->nextThread = NULL;
