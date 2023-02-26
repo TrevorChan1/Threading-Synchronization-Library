@@ -224,7 +224,6 @@ int pthread_create(
 	void * stackPtr =  malloc(THREAD_STACK_SIZE);
 	*(unsigned long *) (stackPtr + THREAD_STACK_SIZE - 8) = (unsigned long) &pthread_exit;
 	newThread->stackPtr = stackPtr;
-	
 
 	//ptr mangle start_thunk and the pthread_exit thing
 	sigsetjmp(newThread->currentContext, 1);
@@ -235,7 +234,7 @@ int pthread_create(
 	newThread->currentContext[0].__jmpbuf[JB_PC] = ptr_mangle( (unsigned long) start_thunk );
 
 	*thread = (pthread_t) newThread->tid;
-
+	free(stackPtr);
 	TCB->lastThread->nextThread = newThread;
 	TCB->lastThread = newThread;
 	TCB->lastThread->nextThread = NULL;
@@ -258,7 +257,6 @@ void pthread_exit(void *value_ptr)
 	ualarm(0,0);
 	// Set the current thread's status to exited
 	TCB->currentThread->status = TS_EXITED;
-	free(TCB->currentThread->stackPtr);
 
 	// Run schedule to free values and set the next thread to be run
 	schedule(0);
