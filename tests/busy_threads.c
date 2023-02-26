@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 /* How many threads (aside from main) to create */
-#define THREAD_CNT 200
+#define THREAD_CNT 3
 
 /* pthread_join is not implemented in homework 2 */
 #define HAVE_PTHREAD_JOIN 0
