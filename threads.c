@@ -214,7 +214,6 @@ int pthread_create(
 		printf("ERROR: No available threads\n");
 		return -1;
 	}
-	newThread->tid = TCB->size++;
 
 	// Create the stack: Dynamically allocate memory
 	void * stackPtr =  malloc(THREAD_STACK_SIZE);
