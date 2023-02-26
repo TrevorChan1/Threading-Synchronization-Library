@@ -201,6 +201,7 @@ int pthread_create(
 		if(available[i]){
 			newThread->tid = i;
 			available[i] = false;
+			found = true;
 			break;
 		}
 		i++;
