@@ -76,7 +76,9 @@ static void schedule(int sig)
 	(void) ptr_demangle;
 	// Use setjmp to update currently active thread's jmp_buf, if jumped to = no scheduling
 	if(sigsetjmp(TCB->currentThread->currentContext, 1) == 0){
-	
+		//Reset schedule as the signal handler
+		signal(SIGALRM, schedule);
+		
 		// If current thread is done, then free the thread and move on
 		if(TCB->currentThread->status == TS_EXITED){
 			struct thread_control_block * current = TCB->currentThread;
@@ -129,8 +131,6 @@ static void schedule(int sig)
 			// If there is no more next threads but the current thread is not done, just keep running
 		}
 	}
-	//Reset schedule as the signal handler
-	signal(SIGALRM, schedule);
 }
 
 /* TODO: do everything that is needed to initialize your scheduler. For example:
@@ -258,7 +258,7 @@ void pthread_exit(void *value_ptr)
 	ualarm(0,0);
 	// Set the current thread's status to exited
 	TCB->currentThread->status = TS_EXITED;
-	free(stackToFree)
+	
 	// Run schedule to free values and set the next thread to be run
 	schedule(0);
 
