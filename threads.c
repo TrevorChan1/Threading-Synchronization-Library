@@ -61,6 +61,21 @@ struct TCBTable * TCB;
 void * stackToFree;
 bool available[128];
 
+// SIGTERM signal handler to free everything when exit
+static void cleanUp(int sig){
+	struct thread_control_block * current;
+	if(stackToFree)
+		free(stackToFree);
+	while(TCB->currentThread){
+		current = TCB->currentThread;
+		free(current->stackPtr);
+		TCB->currentThread = TCB->currentThread->nextThread;
+		free(current);
+	}
+	free(current);
+	free(TCB);
+}
+
 // SIGALRM handler that saves current context and moves onto the next function
 static void schedule(int sig)
 {
@@ -170,7 +185,7 @@ static void scheduler_init()
 	sigAlrmAction.sa_flags = 0;
 	sigAlrmAction.sa_handler = schedule;
 	sigaction(SIGALRM, &sigAlrmAction, NULL);
-	
+	signal(SIGTERM, cleanUp);
 	// Initialize timer: Every 50ms sends SIGALRM
 	if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
 		printf("ERROR: Timer not set\n");
