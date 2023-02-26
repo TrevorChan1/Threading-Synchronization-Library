@@ -59,10 +59,14 @@ struct TCBTable {
 
 struct TCBTable * TCB;
 void * stackToFree = NULL;
+bool available[128];
 
 // SIGALRM handler that saves current context and moves onto the next function
 static void schedule(int sig)
 {
+	// Reset the alarm so that it can't be fricked up mid-schedule
+	ualarm(0,0);
+
 	// If a previous thread has exited, free the stack and set global stackToFree to NULL
 	if (stackToFree){
 		free(stackToFree);
@@ -143,7 +147,11 @@ static void scheduler_init()
 	TCB->currentThread->tid = TCB->size++;
 	TCB->lastThread = TCB->currentThread;
 
-	
+	// Initialize array of which tid's are available
+	for(int i = 0; i < 128; i++)
+		available[i] = true;
+	available[0] = false;
+
 	// Set signal handler to schedule
 	struct sigaction sigAlrmAction;
 	memset(&sigAlrmAction, 0, sizeof(sigAlrmAction));
@@ -173,6 +181,8 @@ int pthread_create(
 		if(sigsetjmp(TCB->currentThread->currentContext, 1) != 0)
 			return 0;
 	}
+
+	// If there are already 128 threads, print error and return -1
 	if (TCB->size >= 128){
 		*thread = (pthread_t) -1;
 		printf("ERROR: Max number of threads reached\n");
@@ -182,6 +192,25 @@ int pthread_create(
 	struct thread_control_block * newThread = (struct thread_control_block *) malloc(sizeof(struct thread_control_block));
 	newThread->nextThread = NULL;
 	newThread->status = TS_READY;
+
+	// Iterate through all tid's and find first available one. If none are available, print error and return
+	int i = 0;
+	bool found = false;
+	while(i < 128 && !found){
+		if(available[i]){
+			newThread->tid = i;
+			available[i] = false;
+			break;
+		}
+		i++;
+	}
+	
+	if(!found){
+		free(newThread);
+		*thread = (pthread_t) -1;
+		printf("ERROR: No available threads\n");
+		return -1;
+	}
 	newThread->tid = TCB->size++;
 
 	// Create the stack: Dynamically allocate memory
@@ -224,7 +253,9 @@ void pthread_exit(void *value_ptr)
 
 	// Run schedule to free values and set the next thread to be run
 	schedule(0);
-	// No more threads to jump to => exit
+
+	// No more threads to jump to => free the linked list and exit
+	free(TCB);
 	exit(0);
 }
 
