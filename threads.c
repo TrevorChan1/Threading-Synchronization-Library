@@ -81,6 +81,7 @@ static void schedule(int sig)
 		if(TCB->currentThread->status == TS_EXITED){
 			struct thread_control_block * current = TCB->currentThread;
 
+			available[TCB->currentThread->tid] = true;
 			stackToFree = TCB->currentThread->stackPtr;
 			TCB->size--;
 
