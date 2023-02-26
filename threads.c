@@ -83,6 +83,7 @@ static void schedule(int sig)
 
 			available[TCB->currentThread->tid] = true;
 			stackToFree = TCB->currentThread->stackPtr;
+			TCB->currentThread->stackPtr = NULL;
 			TCB->size--;
 
 			// If there are more threads, set up the next thread. Otherwise, do nothing.
@@ -90,6 +91,7 @@ static void schedule(int sig)
 				TCB->currentThread = current->nextThread;
 				TCB->currentThread->status = TS_RUNNING;
 				free(current);
+				current = NULL;
 				// Initialize timer: Send SIGALRM in 50ms
 				if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
 					printf("ERROR: Timer not set\n");
@@ -101,6 +103,7 @@ static void schedule(int sig)
 			
 			// Free the finished thread (don't need to free stack or context since those are freed in thread exit)
 			free(current);
+			current = NULL;
 		}
 		else{
 			// Initialize timer: Send SIGALRM in 50ms
