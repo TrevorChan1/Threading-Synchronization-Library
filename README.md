@@ -32,3 +32,8 @@ If the status is exited in schedule(), it makes it so that it'll free the thread
 This function is the signal handler for SIGALRM. It's called whenever the timer goes off or when a thread exits so that it can set the scheduling for the next thread to be run and jumping to it.
 
 The function first turns off any current alarms to not be interrupted and frees any stack to be freed. It then saves the context of the current interrupted thread using sigsetjmp and, if it didn't just longjmp back to the function, it will set the next thread to be run. If current thread is exited, it will free everything necessary, set that thread id to being available, and if there is a next thread set current thread to that thread. If the status is not exited (meaning it just interrupted) then it will move onto the next thread if it exists and setting the current thread to the end of the list. If there are no more next threads it will do nothing since that'll just continue running the current thread.
+
+### Some sources:
+**http://www.csl.mtu.edu/cs4411.ck/common/Coroutines.pdf**: Used to better understand setjmp, longjmp, and how they are used for threading
+**http://web.eecs.utk.edu/~jplank/plank/classes/cs360/360/notes/Setjmp/lecture.html**: Used to understand how signal handlers interact with setjmp and longjmp
+**Man pages for ualarm, pthread_create, etc.**
