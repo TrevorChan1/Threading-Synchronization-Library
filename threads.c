@@ -83,7 +83,7 @@ static void schedule(int sig)
 
 			available[TCB->currentThread->tid] = true;
 			stackToFree = TCB->currentThread->stackPtr;
-			// TCB->currentThread->stackPtr = NULL;
+			TCB->currentThread->stackPtr = NULL;
 			TCB->size--;
 
 			// If there are more threads, set up the next thread. Otherwise, do nothing.
@@ -262,7 +262,7 @@ void pthread_exit(void *value_ptr)
 	schedule(0);
 
 	// No more threads to jump to => free the linked list and exit
-	free(stackToFree);
+	// free(stackToFree);
 	free(TCB);
 	exit(0);
 }
