@@ -68,7 +68,7 @@ static void schedule(int sig)
 	ualarm(0,0);
 
 	// If a previous thread has exited, free the stack and set global stackToFree to NULL
-	if (stackToFree){
+	if (stackToFree != NULL){
 		free(stackToFree);
 		stackToFree = NULL;
 	}
@@ -83,7 +83,7 @@ static void schedule(int sig)
 
 			available[TCB->currentThread->tid] = true;
 			stackToFree = TCB->currentThread->stackPtr;
-			TCB->currentThread->stackPtr = NULL;
+			// TCB->currentThread->stackPtr = NULL;
 			TCB->size--;
 
 			// If there are more threads, set up the next thread. Otherwise, do nothing.
