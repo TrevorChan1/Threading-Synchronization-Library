@@ -264,7 +264,7 @@ void pthread_exit(void *value_ptr)
 	ualarm(0,0);
 	// Set the current thread's status to exited
 	TCB->currentThread->status = TS_EXITED;
-	free(stackToFree);
+
 	// Run schedule to free values and set the next thread to be run
 	schedule(0);
 
