@@ -83,7 +83,7 @@ static void schedule(int sig)
 
 			available[TCB->currentThread->tid] = true;
 			stackToFree = TCB->currentThread->stackPtr;
-			TCB->currentThread->stackPtr = NULL;
+			// TCB->currentThread->stackPtr = NULL;
 			TCB->size--;
 
 			// If there are more threads, set up the next thread. Otherwise, do nothing.
@@ -92,12 +92,6 @@ static void schedule(int sig)
 				TCB->currentThread->status = TS_RUNNING;
 				free(current);
 				current = NULL;
-
-				// Case where main is the last thread: free ALL stack structures (since not guaranteed you'll return to the scheduler)
-				if (TCB->currentThread->tid == 0 && TCB->size == 1){
-					free(stackToFree);
-				}
-
 				// Initialize timer: Send SIGALRM in 50ms
 				if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
 					printf("ERROR: Timer not set\n");
@@ -268,9 +262,7 @@ void pthread_exit(void *value_ptr)
 	schedule(0);
 
 	// No more threads to jump to => free the linked list and exit
-	// free(stackToFree);
 	free(TCB);
-	TCB = NULL;
 	exit(0);
 }
 
