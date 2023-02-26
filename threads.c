@@ -93,12 +93,6 @@ static void schedule(int sig)
 				free(current);
 				current = NULL;
 
-				// Case where main is the last thread: free ALL stack structures (since not guaranteed you'll return to the scheduler)
-				if (TCB->currentThread->tid == 0 && TCB->size == 1){
-					free(stackToFree);
-					stackToFree = NULL;
-				}
-
 				// Initialize timer: Send SIGALRM in 50ms
 				if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
 					printf("ERROR: Timer not set\n");
@@ -264,7 +258,7 @@ void pthread_exit(void *value_ptr)
 	ualarm(0,0);
 	// Set the current thread's status to exited
 	TCB->currentThread->status = TS_EXITED;
-
+	free(stackToFree)
 	// Run schedule to free values and set the next thread to be run
 	schedule(0);
 
