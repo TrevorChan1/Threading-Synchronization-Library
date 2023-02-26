@@ -58,7 +58,7 @@ struct TCBTable {
 };
 
 struct TCBTable * TCB;
-void * stackToFree = NULL;
+void * stackToFree;
 bool available[128];
 
 // SIGALRM handler that saves current context and moves onto the next function
@@ -151,6 +151,8 @@ static void scheduler_init()
 	TCB->currentThread->status = TS_RUNNING;
 	TCB->currentThread->tid = TCB->size++;
 	TCB->lastThread = TCB->currentThread;
+
+	stackToFree = NULL;
 
 	// Initialize array of which tid's are available
 	for(int i = 0; i < 128; i++)
