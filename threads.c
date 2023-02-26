@@ -82,6 +82,7 @@ static void schedule(int sig)
 			struct thread_control_block * current = TCB->currentThread;
 
 			stackToFree = TCB->currentThread->stackPtr;
+			TCB->size--;
 
 			// If there are more threads, set up the next thread. Otherwise, do nothing.
 			if (current->nextThread != NULL){
@@ -232,6 +233,7 @@ int pthread_create(
 	TCB->lastThread->nextThread = newThread;
 	TCB->lastThread = newThread;
 	TCB->lastThread->nextThread = NULL;
+	TCB->size++;
 
 	return 0;
 }
