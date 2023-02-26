@@ -234,7 +234,7 @@ int pthread_create(
 	newThread->currentContext[0].__jmpbuf[JB_PC] = ptr_mangle( (unsigned long) start_thunk );
 
 	*thread = (pthread_t) newThread->tid;
-	// free(stackPtr);
+
 	TCB->lastThread->nextThread = newThread;
 	TCB->lastThread = newThread;
 	TCB->lastThread->nextThread = NULL;
@@ -257,12 +257,12 @@ void pthread_exit(void *value_ptr)
 	ualarm(0,0);
 	// Set the current thread's status to exited
 	TCB->currentThread->status = TS_EXITED;
-	free(TCB->currentThread->stackPtr);
 
 	// Run schedule to free values and set the next thread to be run
 	schedule(0);
 
 	// No more threads to jump to => free the linked list and exit
+	free(stackToFree);
 	free(TCB);
 	exit(0);
 }
