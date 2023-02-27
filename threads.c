@@ -81,7 +81,6 @@ static void schedule(int sig)
 		if(TCB->currentThread->status == TS_EXITED){
 			struct thread_control_block * current = TCB->currentThread;
 
-			available[TCB->currentThread->tid] = true;
 			stackToFree = TCB->currentThread->stackPtr;
 			TCB->size--;
 
@@ -214,6 +213,7 @@ int pthread_create(
 		printf("ERROR: No available threads\n");
 		return -1;
 	}
+	newThread->tid = TCB->size++;
 
 	// Create the stack: Dynamically allocate memory
 	void * stackPtr =  malloc(THREAD_STACK_SIZE);
