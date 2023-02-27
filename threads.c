@@ -61,24 +61,12 @@ struct TCBTable * TCB;
 void * stackToFree;
 bool available[128];
 
-// SIGTERM signal handler to free everything when exit
-static void cleanUp(int sig){
-	struct thread_control_block * current;
-	if(stackToFree)
-		free(stackToFree);
-	while(TCB->currentThread){
-		current = TCB->currentThread;
-		free(current->stackPtr);
-		TCB->currentThread = TCB->currentThread->nextThread;
-		free(current);
-	}
-	free(current);
-	free(TCB);
-}
-
 // SIGALRM handler that saves current context and moves onto the next function
 static void schedule(int sig)
 {
+	// Reset the alarm so that it can't be fricked up mid-schedule
+	ualarm(0,0);
+
 	// If a previous thread has exited, free the stack and set global stackToFree to NULL
 	if (stackToFree != NULL){
 		free(stackToFree);
@@ -95,7 +83,6 @@ static void schedule(int sig)
 
 			available[TCB->currentThread->tid] = true;
 			stackToFree = TCB->currentThread->stackPtr;
-			// TCB->currentThread->stackPtr = NULL;
 			TCB->size--;
 
 			// If there are more threads, set up the next thread. Otherwise, do nothing.
@@ -104,13 +91,6 @@ static void schedule(int sig)
 				TCB->currentThread->status = TS_RUNNING;
 				free(current);
 				current = NULL;
-
-				// If the last existing thread is the main thread, then free stack
-				if (TCB->currentThread->tid == 0 && TCB->size == 1){
-					free(stackToFree);
-					printf("here\n");
-				}
-
 				// Initialize timer: Send SIGALRM in 50ms
 				if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
 					printf("ERROR: Timer not set\n");
@@ -162,7 +142,7 @@ static void schedule(int sig)
 static void scheduler_init()
 {
 	// Allocate memory for the TCB table with MAX_THREADS entries
-	TCB = (struct TCBTable *) malloc(sizeof(struct TCBTable));
+	TCB = (struct TCBTable *) malloc(sizeof(struct TCBTable) + sizeof(struct thread_control_block) * MAX_THREADS);
 	TCB->size = 0;
 	TCB->currentThread = (struct thread_control_block *) malloc(sizeof(struct thread_control_block));
 	TCB->currentThread->nextThread = NULL;
@@ -185,7 +165,7 @@ static void scheduler_init()
 	sigAlrmAction.sa_flags = 0;
 	sigAlrmAction.sa_handler = schedule;
 	sigaction(SIGALRM, &sigAlrmAction, NULL);
-	signal(SIGTERM, cleanUp);
+	
 	// Initialize timer: Every 50ms sends SIGALRM
 	if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
 		printf("ERROR: Timer not set\n");
@@ -243,6 +223,7 @@ int pthread_create(
 	void * stackPtr =  malloc(THREAD_STACK_SIZE);
 	*(unsigned long *) (stackPtr + THREAD_STACK_SIZE - 8) = (unsigned long) &pthread_exit;
 	newThread->stackPtr = stackPtr;
+	
 
 	//ptr mangle start_thunk and the pthread_exit thing
 	sigsetjmp(newThread->currentContext, 1);
@@ -276,13 +257,12 @@ void pthread_exit(void *value_ptr)
 	ualarm(0,0);
 	// Set the current thread's status to exited
 	TCB->currentThread->status = TS_EXITED;
-	
+
 	// Run schedule to free values and set the next thread to be run
 	schedule(0);
 
 	// No more threads to jump to => free the linked list and exit
 	free(TCB);
-	TCB = NULL;
 	exit(0);
 }
 
