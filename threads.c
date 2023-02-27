@@ -58,7 +58,7 @@ struct TCBTable {
 };
 
 struct TCBTable * TCB;
-void * stackToFree;
+void * stackToFree = NULL;
 bool available[128];
 
 // SIGALRM handler that saves current context and moves onto the next function
@@ -68,7 +68,7 @@ static void schedule(int sig)
 	ualarm(0,0);
 
 	// If a previous thread has exited, free the stack and set global stackToFree to NULL
-	if (stackToFree != NULL){
+	if (stackToFree){
 		free(stackToFree);
 		stackToFree = NULL;
 	}
@@ -90,7 +90,6 @@ static void schedule(int sig)
 				TCB->currentThread = current->nextThread;
 				TCB->currentThread->status = TS_RUNNING;
 				free(current);
-				current = NULL;
 				// Initialize timer: Send SIGALRM in 50ms
 				if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
 					printf("ERROR: Timer not set\n");
@@ -102,7 +101,6 @@ static void schedule(int sig)
 			
 			// Free the finished thread (don't need to free stack or context since those are freed in thread exit)
 			free(current);
-			current = NULL;
 		}
 		else{
 			// Initialize timer: Send SIGALRM in 50ms
@@ -150,8 +148,6 @@ static void scheduler_init()
 	TCB->currentThread->status = TS_RUNNING;
 	TCB->currentThread->tid = TCB->size++;
 	TCB->lastThread = TCB->currentThread;
-
-	stackToFree = NULL;
 
 	// Initialize array of which tid's are available
 	for(int i = 0; i < 128; i++)
