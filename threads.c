@@ -64,9 +64,6 @@ bool available[MAX_THREADS];
 // SIGALRM handler that saves current context and moves onto the next function
 static void schedule(int sig)
 {
-	// Reset the alarm so that it can't be fricked up mid-schedule
-	ualarm(0,0);
-
 	// If a previous thread has exited, free the stack and set global stackToFree to NULL
 	if (stackToFree != NULL){
 		free(stackToFree);
@@ -242,7 +239,7 @@ void pthread_exit(void *value_ptr)
 	ualarm(0,0);
 	// Set the current thread's status to exited
 	TCB->currentThread->status = TS_EXITED;
-
+	
 	// Run schedule to free values and set the next thread to be run
 	schedule(0);
 
