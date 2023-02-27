@@ -58,8 +58,8 @@ struct TCBTable {
 };
 
 struct TCBTable * TCB;
-void * stackToFree = NULL;
-bool available[128];
+void * stackToFree;
+bool available[MAX_THREADS];
 
 // SIGALRM handler that saves current context and moves onto the next function
 static void schedule(int sig)
@@ -68,7 +68,7 @@ static void schedule(int sig)
 	ualarm(0,0);
 
 	// If a previous thread has exited, free the stack and set global stackToFree to NULL
-	if (stackToFree){
+	if (stackToFree != NULL){
 		free(stackToFree);
 		stackToFree = NULL;
 	}
@@ -88,7 +88,14 @@ static void schedule(int sig)
 			if (current->nextThread != NULL){
 				TCB->currentThread = current->nextThread;
 				TCB->currentThread->status = TS_RUNNING;
+
+				// If main is last thread, free last exited thread's stack in case don't go back
+				if (TCB->currentThread->tid == 0 && TCB->size == 1){
+					free(stackToFree);
+				}
+
 				free(current);
+				current = NULL;
 				// Initialize timer: Send SIGALRM in 50ms
 				if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
 					printf("ERROR: Timer not set\n");
@@ -100,6 +107,7 @@ static void schedule(int sig)
 			
 			// Free the finished thread (don't need to free stack or context since those are freed in thread exit)
 			free(current);
+			current = NULL;
 		}
 		else{
 			// Initialize timer: Send SIGALRM in 50ms
@@ -128,14 +136,7 @@ static void schedule(int sig)
 	signal(SIGALRM, schedule);
 }
 
-/* TODO: do everything that is needed to initialize your scheduler. For example:
-* - Allocate/initialize global threading data structures
-* - Create a TCB for the main thread. Note: This is less complicated
-*   than the TCBs you create for all other threads. In this case, your
-*   current stack and registers are already exactly what they need to be!
-*   Just make sure they are correctly referenced in your TCB.
-* - Set up your timers to call schedule() at a 50 ms interval (SCHEDULER_INTERVAL_USECS)
-*/
+// Scheduler_init function for initializing global variables and main thread
 static void scheduler_init()
 {
 	// Allocate memory for the TCB table with MAX_THREADS entries
@@ -148,8 +149,10 @@ static void scheduler_init()
 	TCB->currentThread->tid = TCB->size++;
 	TCB->lastThread = TCB->currentThread;
 
+	stackToFree = NULL;
+
 	// Initialize array of which tid's are available
-	for(int i = 0; i < 128; i++)
+	for(int i = 0; i < MAX_THREADS; i++)
 		available[i] = true;
 	available[0] = false;
 
@@ -168,6 +171,7 @@ static void scheduler_init()
 	}
 }
 
+// Thread creation function that allocates and initializes values for a new thread.
 int pthread_create(
 	pthread_t *thread, const pthread_attr_t *attr,
 	void *(*start_routine) (void *), void *arg)
@@ -184,7 +188,7 @@ int pthread_create(
 	}
 
 	// If there are already 128 threads, print error and return -1
-	if (TCB->size >= 128){
+	if (TCB->size >= MAX_THREADS){
 		*thread = (pthread_t) -1;
 		printf("ERROR: Max number of threads reached\n");
 		return -1;
@@ -197,7 +201,7 @@ int pthread_create(
 	// Iterate through all tid's and find first available one. If none are available, print error and return
 	int i = 0;
 	bool found = false;
-	while(i < 128 && !found){
+	while(i < MAX_THREADS && !found){
 		if(available[i]){
 			newThread->tid = i;
 			available[i] = false;
@@ -238,14 +242,7 @@ int pthread_create(
 	return 0;
 }
 
-/* TODO: Exit the current thread instead of exiting the entire process.
-* Hints:
-* - Release all resources for the current thread. CAREFUL though.
-*   If you free() the currently-in-use stack then do something like
-*   call a function or add/remove variables from the stack, bad things
-*   can happen.
-* - Update the thread's status to indicate that it has exited
-*/
+// Exit function that runs whenever a thread has exited either implicitly or explicitly
 void pthread_exit(void *value_ptr)
 {
 	// Cancel any current alarms
@@ -261,12 +258,12 @@ void pthread_exit(void *value_ptr)
 	exit(0);
 }
 
-/* TODO: Return the current thread instead of -1
-* Hint: this function can be implemented in one line, by returning
-* a specific variable instead of -1.
-*/
+// Function that returns the thread id of the currently running thread
 pthread_t pthread_self(void)
 {
-	// Return tid of current thread
-	return (pthread_t) TCB->currentThread->tid;
+	if (TCB->size > 0){
+		// Return tid of current thread
+		return (pthread_t) TCB->currentThread->tid;
+	}
+	return (pthread_t) -1;
 }
