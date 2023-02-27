@@ -64,6 +64,7 @@ bool available[MAX_THREADS];
 // SIGALRM handler that saves current context and moves onto the next function
 static void schedule(int sig)
 {
+	printf("\n\n %d \n\n", TCB->size);
 	// If a previous thread has exited, free the stack and set global stackToFree to NULL
 	if (stackToFree != NULL){
 		free(stackToFree);
@@ -85,6 +86,10 @@ static void schedule(int sig)
 			if (current->nextThread != NULL){
 				TCB->currentThread = current->nextThread;
 				TCB->currentThread->status = TS_RUNNING;
+
+				if (TCB->currentThread->tid == 0 && TCB->size == 1){
+					free(stackToFree);
+				}
 
 				free(current);
 				current = NULL;
