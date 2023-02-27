@@ -89,11 +89,6 @@ static void schedule(int sig)
 				TCB->currentThread = current->nextThread;
 				TCB->currentThread->status = TS_RUNNING;
 
-				// If main is last thread, free last exited thread's stack in case don't go back
-				if (TCB->currentThread->tid == 0 && TCB->size == 1){
-					free(stackToFree);
-				}
-
 				free(current);
 				current = NULL;
 				// Initialize timer: Send SIGALRM in 50ms
