@@ -135,7 +135,7 @@ static void schedule(int sig)
 static void scheduler_init()
 {
 	// Allocate memory for the TCB table with MAX_THREADS entries
-	TCB = (struct TCBTable *) malloc(sizeof(struct TCBTable) + 2 * sizeof(struct thread_control_block) + sizeof(int));
+	TCB = (struct TCBTable *) malloc(sizeof(struct TCBTable) + 2 * sizeof(struct thread_control_block));
 	TCB->size = 0;
 	TCB->currentThread = (struct thread_control_block *) malloc(sizeof(struct thread_control_block));
 	TCB->currentThread->nextThread = NULL;
