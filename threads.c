@@ -88,7 +88,7 @@ static void schedule(int sig)
 
 				if (TCB->currentThread->tid == 0 && TCB->size == 1){
 					free(stackToFree);
-					printf("\n\n here \n\n");
+					stackToFree = NULL;
 				}
 
 				free(current);
@@ -129,8 +129,6 @@ static void schedule(int sig)
 			// If there is no more next threads but the current thread is not done, just keep running
 		}
 	}
-	//Reset schedule as the signal handler
-	signal(SIGALRM, schedule);
 }
 
 // Scheduler_init function for initializing global variables and main thread
@@ -244,7 +242,6 @@ void pthread_exit(void *value_ptr)
 	ualarm(0,0);
 	// Set the current thread's status to exited
 	TCB->currentThread->status = TS_EXITED;
-	printf("\n\n I am an exitty boy!! \n\n");
 	// Run schedule to free values and set the next thread to be run
 	schedule(0);
 
