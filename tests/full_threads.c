@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 // An example where it tests if
 
@@ -10,7 +11,7 @@
 
 // Generic start_routine function that just sleeps for 10 seconds then returns NULL
 void * runThread(void *arg) {
-    printf("I'm thread %d!\n", pthread_self());
+    printf("I'm thread %d!\n", (int) pthread_self());
 	sleep(2);
 
 	return NULL;
@@ -23,7 +24,7 @@ int main(int argc, char **argv) {
 	int i;
 
     // Create 128 threads (should return -1 on on last one because including thread there would be 129 threads existing)
-	for(i = 0; i < THREAD_CNT; i++) {
+	for(i = 1; i <= THREAD_CNT; i++) {
 
         // Check if pthread_create returns a -1 (reaches error) when number of threads = 129
         if (pthread_create(&threads[i], NULL, runThread, (void *) NULL) == -1){
@@ -39,5 +40,6 @@ int main(int argc, char **argv) {
 
     // Fails test case if it's able to exceed MAX_THREAD count or didn't manage to create 128 threads
     printf("Test case failed\n");
+    sleep(10);
     return -1;
 }

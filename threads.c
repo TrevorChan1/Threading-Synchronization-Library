@@ -180,7 +180,6 @@ int pthread_create(
 			return 0;
 	}
 
-	// If there are already 128 threads, print error and return -1
 	if (TCB->size >= MAX_THREADS){
 		*thread = (pthread_t) -1;
 		printf("ERROR: Max number of threads reached\n");
