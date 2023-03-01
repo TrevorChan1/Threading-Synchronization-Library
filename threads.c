@@ -80,7 +80,7 @@ static void schedule(int sig)
 
 			stackToFree = TCB->currentThread->stackPtr;
 			TCB->size--;
-
+			available[TCB->currentThread->tid] = true;
 			// If there are more threads, set up the next thread. Otherwise, do nothing.
 			if (current->nextThread != NULL){
 				TCB->currentThread = current->nextThread;
@@ -241,6 +241,7 @@ void pthread_exit(void *value_ptr)
 	ualarm(0,0);
 	// Set the current thread's status to exited
 	TCB->currentThread->status = TS_EXITED;
+
 	// Run schedule to free values and set the next thread to be run
 	schedule(0);
 

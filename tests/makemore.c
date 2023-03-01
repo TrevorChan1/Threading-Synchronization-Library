@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
 
     // Sleep for 1 second (run through scheduler to allow some threads to be freed)
     sleep(1);
-    int smoreThreads[3];
+    pthread_t smoreThreads[3];
 
     for (int i = 0; i < 3; i++) {
 
@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
             printf("Test case failed\n");
             return -1;
         }
-        if (smoreThreads[i] < 0 || smoreThreads > 128){
+        if ((int) smoreThreads[i] < 0 || (int) smoreThreads[i] > 128){
             // Fail test case if the thread id isn't valid (assuming people set thread id's from 0 to 127 or 1 to 128)
             printf("Test case failed\n");
             return -1;
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
     }
 
     // If was able to successfully create those 3 threads and those threads gave thread id's, succeed test
-    printf("Test case succeeded\n");
+    printf("Test case passed\n");
     return 0;
 
 }
