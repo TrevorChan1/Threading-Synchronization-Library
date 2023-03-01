@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-// An example where it tests if
+// An example where it tests if pthread_create returns -1 if trying to exceed thread count
 
 /* How many threads (aside from main) to create */
 #define THREAD_CNT 128
