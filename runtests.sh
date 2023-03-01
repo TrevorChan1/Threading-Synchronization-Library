@@ -16,8 +16,8 @@ gcc -Wall -Werror -std=gnu99 -O0 -g ../threads.c ../tests/full_threads.c -o test
 # Run executable
 ./testfull > test1out.txt
 
-# Check results
-if [[ *"Test case passed"* == "$(cat test1out.txt)" ]];
+# Check results (should pass even if you implemented error messages)
+if [[ "$(cat test1out.txt)" == *"Test case passed" ]];
     then echo "Test 1 passed"
     else echo "Test 1 failed"
 fi
