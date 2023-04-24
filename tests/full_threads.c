@@ -10,6 +10,7 @@
 #define THREAD_CNT 128
 
 // Generic start_routine function that just sleeps for 10 seconds then returns NULL
+// Added print statement if people needed help debugging
 void * runThread(void *arg) {
     printf("I'm thread %d!\n", (int) pthread_self());
 	sleep(2);

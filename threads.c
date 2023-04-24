@@ -259,3 +259,31 @@ pthread_t pthread_self(void)
 	}
 	return (pthread_t) -1;
 }
+
+// Mutex function that initializes the mutex values
+int pthread_mutex_init(pthread_mutex_t * restrict mutex,
+						const pthread_mutexattr_t * restrict attr){
+
+}
+
+// Mutex function used to destroy the inputted mutex
+int pthread_mutex_destroy(pthread_mutex_t * mutex){
+
+}
+
+// Mutex function used to lock current thread or block until resource available
+int pthread_mutex_lock(pthread_mutex_t * mutex){
+
+}
+
+// Mutex unlock function used to unlock a resource and notify first blocked
+int pthread_mutex_unlock(pthread_mutex_t *mutex){
+
+}
+
+// Barrier initialization function that creates barrier
+int pthread_barrier_init(pthread_barrier_t *restrict barrier,
+						const pthread_barrierattr_t *restrict attr,
+						unsigned count){
+							
+						}
