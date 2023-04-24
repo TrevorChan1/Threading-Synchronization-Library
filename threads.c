@@ -338,6 +338,34 @@ int pthread_mutex_lock(struct pthread_mutex_t * mutex){
 
 // Mutex unlock function used to unlock a resource and notify first blocked
 int pthread_mutex_unlock(struct pthread_mutex_t *mutex){
+	
+	// If mutex doesn't exist or mutex is already free then return error
+	if (mutex == NULL || mutex->head == NULL){
+		return -1;
+	}
+
+	// If mutex is already free, do nothing
+	if (mutex->status == MS_FREE)
+		return 0;
+	
+	// Set up the next thread to be used
+	struct thread_node * temp = mutex->head;
+	mutex->head = mutex->head->next;
+	free(temp);
+
+	// Schedule the next free thread as the next one
+	if (mutex->head != NULL){
+		mutex->head->thread->status = TS_READY;
+		TCB->lastThread->nextThread = mutex->head->thread;
+		TCB->lastThread = mutex->head->thread;
+		TCB->lastThread->nextThread = NULL;
+	}
+	// If there are no more waiting threads, set mutex to free
+	else{
+		mutex->status = MS_FREE;
+	}
+
+	return 0;
 
 }
 
