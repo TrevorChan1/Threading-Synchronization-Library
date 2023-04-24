@@ -35,7 +35,8 @@ enum thread_status
 {
 	TS_EXITED,
 	TS_RUNNING,
-	TS_READY
+	TS_READY,
+	TS_BLOCKED
 };
 
 /* The thread control block stores information about a thread. You will
@@ -60,6 +61,26 @@ struct TCBTable {
 struct TCBTable * TCB;
 void * stackToFree = NULL;
 bool available[MAX_THREADS];
+
+// Mutex Library data structure definitions:
+
+enum lock_status {
+	MS_LOCKED,
+	MS_FREE
+};
+
+// Node (used for linked list of threads blocked for lock)
+struct thread_node {
+	struct thread_control_block * thread;
+	struct thread_control_block * next;
+};
+
+// Mutex data structure that contains status and the head of the linked list of blocked threads
+// Head points to thread that currently has the lock
+struct pthread_mutex_t {
+	enum lock_status status;
+	struct thread_node * head;
+};
 
 // SIGALRM handler that saves current context and moves onto the next function
 static void schedule(int sig)
@@ -267,17 +288,17 @@ int pthread_mutex_init(pthread_mutex_t * restrict mutex,
 }
 
 // Mutex function used to destroy the inputted mutex
-int pthread_mutex_destroy(pthread_mutex_t * mutex){
+int pthread_mutex_destroy(struct pthread_mutex_t * mutex){
 
 }
 
 // Mutex function used to lock current thread or block until resource available
-int pthread_mutex_lock(pthread_mutex_t * mutex){
+int pthread_mutex_lock(struct pthread_mutex_t * mutex){
 
 }
 
 // Mutex unlock function used to unlock a resource and notify first blocked
-int pthread_mutex_unlock(pthread_mutex_t *mutex){
+int pthread_mutex_unlock(struct pthread_mutex_t *mutex){
 
 }
 
@@ -285,5 +306,15 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 int pthread_barrier_init(pthread_barrier_t *restrict barrier,
 						const pthread_barrierattr_t *restrict attr,
 						unsigned count){
-							
+
 						}
+
+// Barrier function used to destroy current barrier
+int pthread_barrier_destroy(pthread_barrier_t *barrier){
+
+}
+
+// Barrier function used to block current thread until barrier broken
+int pthread_barrier_wait(pthread_barrier_t *barrier){
+
+}
