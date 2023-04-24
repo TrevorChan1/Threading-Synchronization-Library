@@ -80,6 +80,7 @@ struct thread_node {
 struct pthread_mutex_t {
 	enum lock_status status;
 	struct thread_node * head;
+	struct thread_node * tail;
 };
 
 // SIGALRM handler that saves current context and moves onto the next function
@@ -282,18 +283,56 @@ pthread_t pthread_self(void)
 }
 
 // Mutex function that initializes the mutex values
-int pthread_mutex_init(pthread_mutex_t * restrict mutex,
+int pthread_mutex_init(struct pthread_mutex_t * restrict mutex,
 						const pthread_mutexattr_t * restrict attr){
+	// Initialize data structure for mutex (set to free and empty LL)
+	mutex = (struct pthread_mutex_t *) malloc(sizeof(struct pthread_mutex_t));
+	mutex->status = MS_FREE;
+	mutex->head = NULL;
 
+	return 0;
 }
 
 // Mutex function used to destroy the inputted mutex
 int pthread_mutex_destroy(struct pthread_mutex_t * mutex){
+	// To delete the mutex, simply free all of the linked list and the mutex itself
+	while (mutex->head != NULL){
+		struct thread_node * temp = mutex->head;
+		mutex->head = mutex->head->next;
+		free(temp);
+	}
+	free(mutex);
 
+	return 0;
 }
 
 // Mutex function used to lock current thread or block until resource available
 int pthread_mutex_lock(struct pthread_mutex_t * mutex){
+
+	// If mutex doesn't exist, then return error
+	if (mutex == NULL){
+		return -1;
+	}
+
+	// Initialize thread node to be added to the linked list
+	struct thread_node * cur_thread = (struct thread_node *) malloc(sizeof(struct thread_node));
+	cur_thread->next = NULL;
+	cur_thread->thread = TCB->currentThread;
+
+	// If mutex is free, simply lock it and give it to the current thread
+	if (mutex->status == MS_FREE){
+		mutex->head = cur_thread;
+		mutex->tail = cur_thread;
+		mutex->status = MS_LOCKED;
+	}
+	// If mutex is being used, add current thread to linked list and block current thread
+	else{
+		mutex->tail->next = cur_thread;
+		mutex->tail = cur_thread;
+		TCB->currentThread->status = TS_BLOCKED;
+		schedule(0);
+	}
+	return 0;
 
 }
 
