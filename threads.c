@@ -430,8 +430,9 @@ int pthread_barrier_init(pthread_barrier_t *restrict barrier,
 int pthread_barrier_destroy(pthread_barrier_t *barrier){
 	my_pthread_barrier_t * my_barrier = (my_pthread_barrier_t *) barrier;
 	// Check if barrier exists
-	if (barrier == NULL){
+	if (my_barrier == NULL){
 		printf("Error: No barrier specified\n");
+		return -1;
 	}
 
 	// Iterate through all of the threads listed and free them
@@ -447,8 +448,9 @@ int pthread_barrier_wait(pthread_barrier_t *barrier){
 	my_pthread_barrier_t * my_barrier = (my_pthread_barrier_t *) barrier;
 	ualarm(0,0);
 	// Check if barrier exists
-	if (barrier == NULL){
+	if (my_barrier == NULL){
 		printf("Error: No barrier specified\n");
+		return -1;
 	}
 
 	// Increment number of blocks currently in the barrier, if it's equal to count then awaken all threads
