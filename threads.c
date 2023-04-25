@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <string.h>
+#include <errno.h>
 
 /* You can support more threads. At least support this many. */
 #define MAX_THREADS 128
@@ -82,6 +83,14 @@ struct pthread_mutex_t {
 	struct thread_node * head;
 	struct thread_node * tail;
 };
+
+struct pthread_barrier_t {
+	unsigned int count;
+	unsigned int num_blocked;
+	struct thread_control_block ** threads;
+};
+
+/***  Code Section  ***/
 
 // SIGALRM handler that saves current context and moves onto the next function
 static void schedule(int sig)
@@ -387,20 +396,72 @@ int pthread_mutex_unlock(struct pthread_mutex_t *mutex){
 	return 0;
 
 }
-
+typedef void * pthread_barrierattr_t;
 // Barrier initialization function that creates barrier
-int pthread_barrier_init(pthread_barrier_t *restrict barrier,
+int pthread_barrier_init(struct pthread_barrier_t *restrict barrier,
 						const pthread_barrierattr_t *restrict attr,
 						unsigned count){
+	// Check if count value is valid
+	if (count <= 0){
+		print("Error: Not a valid count value\n");
+		return EINVAL;
+	}
 
-						}
+	// Initialize the data structure and allocate memory for it
+	barrier = (struct pthread_barrier_t *) malloc(sizeof(struct pthread_barrier_t));
+	barrier->count = count;
+	barrier->num_blocked = 0;
+	barrier->threads = (struct thread_control_block **) malloc(count * sizeof(struct thread_control_block *));
+
+	return 0;
+}
 
 // Barrier function used to destroy current barrier
-int pthread_barrier_destroy(pthread_barrier_t *barrier){
+int pthread_barrier_destroy(struct pthread_barrier_t *barrier){
+	// Check if barrier exists
+	if (!barrier){
+		printf("Error: No barrier specified\n");
+	}
+
+	// Iterate through all of the threads listed and free them
+	for (int i = 0; i < barrier->num_blocked; i++){
+		free(barrier->threads[i]);
+	}
+	free(barrier);
+	return 0;
 
 }
 
 // Barrier function used to block current thread until barrier broken
-int pthread_barrier_wait(pthread_barrier_t *barrier){
+int pthread_barrier_wait(struct pthread_barrier_t *barrier){
+	ualarm(0,0);
+	// Check if barrier exists
+	if (!barrier){
+		printf("Error: No barrier specified\n");
+	}
 
+	// Increment number of blocks currently in the barrier, if it's equal to count then awaken all threads
+	barrier->num_blocked++;
+	if (barrier->num_blocked >= barrier->count){
+		// Iterate through all threads in barrier and set all to ready and add them to the schedule
+		for (int i = 0; i < barrier->count; i++){
+			barrier->threads[i]->status = TS_READY;
+			TCB->lastThread->nextThread = barrier->threads[i];
+			TCB->lastThread = barrier->threads[i];
+		}
+		// Initialize timer: Send SIGALRM in 50ms
+		if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
+			printf("ERROR: Timer not set\n");
+			exit(-1);
+		}
+		return PTHREAD_BARRIER_SERIAL_THREAD;
+	}
+	// If barrier is not full yet, add current thread to the barrier and schedule it to get taken out of schedule (return 0 when back)
+	else{
+		// Add thread to list and block it
+		barrier->threads[barrier->num_blocked-1] = TCB->currentThread;
+		TCB->currentThread->status = TS_BLOCKED;
+		schedule(0);
+		return 0;
+	}
 }
