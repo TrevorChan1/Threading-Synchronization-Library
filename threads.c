@@ -78,13 +78,13 @@ struct thread_node {
 
 // Mutex data structure that contains status and the head of the linked list of blocked threads
 // Head points to thread that currently has the lock
-typedef struct pthread_mutex_t {
+typedef struct haha {
 	enum lock_status status;
 	struct thread_node * head;
 	struct thread_node * tail;
 }pthread_mutex_t;
 
-typedef struct pthread_barrier_t {
+typedef struct hehe {
 	unsigned int count;
 	unsigned int num_blocked;
 	struct thread_control_block ** threads;
