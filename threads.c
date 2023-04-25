@@ -7,6 +7,7 @@
 #include <signal.h>
 #include <string.h>
 #include <errno.h>
+#include <pthread.h>
 
 /* You can support more threads. At least support this many. */
 #define MAX_THREADS 128
@@ -309,7 +310,6 @@ pthread_t pthread_self(void)
 	return (pthread_t) -1;
 }
 
-typedef void * pthread_mutexattr_t;
 // Mutex function that initializes the mutex values
 int pthread_mutex_init(struct pthread_mutex_t * restrict mutex,
 						const pthread_mutexattr_t * restrict attr){
@@ -396,7 +396,7 @@ int pthread_mutex_unlock(struct pthread_mutex_t *mutex){
 	return 0;
 
 }
-typedef void * pthread_barrierattr_t;
+
 // Barrier initialization function that creates barrier
 int pthread_barrier_init(struct pthread_barrier_t *restrict barrier,
 						const pthread_barrierattr_t *restrict attr,
