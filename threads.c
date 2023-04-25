@@ -1,5 +1,4 @@
 #include "ec440threads.h"
-#include <pthread.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <setjmp.h>
@@ -73,7 +72,7 @@ enum lock_status {
 // Node (used for linked list of threads blocked for lock)
 struct thread_node {
 	struct thread_control_block * thread;
-	struct thread_control_block * next;
+	struct thread_node * next;
 };
 
 // Mutex data structure that contains status and the head of the linked list of blocked threads
@@ -310,6 +309,7 @@ pthread_t pthread_self(void)
 	return (pthread_t) -1;
 }
 
+typedef void * pthread_mutexattr_t;
 // Mutex function that initializes the mutex values
 int pthread_mutex_init(struct pthread_mutex_t * restrict mutex,
 						const pthread_mutexattr_t * restrict attr){
@@ -403,7 +403,7 @@ int pthread_barrier_init(struct pthread_barrier_t *restrict barrier,
 						unsigned count){
 	// Check if count value is valid
 	if (count <= 0){
-		print("Error: Not a valid count value\n");
+		printf("Error: Not a valid count value\n");
 		return EINVAL;
 	}
 
@@ -454,7 +454,9 @@ int pthread_barrier_wait(struct pthread_barrier_t *barrier){
 			printf("ERROR: Timer not set\n");
 			exit(-1);
 		}
-		return PTHREAD_BARRIER_SERIAL_THREAD;
+
+		//return PTHREAD_BARRIER_SERIAL_THREAD;
+		return -1;
 	}
 	// If barrier is not full yet, add current thread to the barrier and schedule it to get taken out of schedule (return 0 when back)
 	else{
