@@ -128,6 +128,25 @@ static void schedule(int sig)
 			free(current);
 			current = NULL;
 		}
+		else if (TCB->currentThread->status == TS_BLOCKED){
+			// Initialize timer: Send SIGALRM in 50ms
+			if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
+				printf("ERROR: Timer not set\n");
+				exit(-1);
+			}
+			
+			// If the current thread is blocked, then take it out of the linked list
+			if (TCB->currentThread->nextThread != NULL){
+				TCB->currentThread = TCB->currentThread->nextThread;
+				TCB->currentThread->status = TS_RUNNING;
+				siglongjmp(TCB->currentThread->currentContext, 1);
+			}
+			// If rest is empty, just set everything to NULL (shouldn't reach here)
+			else{
+				TCB->currentThread = NULL;
+				TCB->lastThread = NULL;
+			}
+		}
 		else{
 			// Initialize timer: Send SIGALRM in 50ms
 			if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
