@@ -1,4 +1,4 @@
-#include "../threads.c"
+#include "../threads.h"
 #include <stdio.h>
 #include <sys/types.h>
 
