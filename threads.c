@@ -311,7 +311,7 @@ pthread_t pthread_self(void)
 }
 
 // Mutex function that initializes the mutex values
-int pthread_mutex_init(struct pthread_mutex_t * restrict mutex,
+int pthread_mutex_init(pthread_mutex_t * restrict mutex,
 						const pthread_mutexattr_t * restrict attr){
 	// Initialize data structure for mutex (set to free and empty LL)
 	mutex = (struct pthread_mutex_t *) malloc(sizeof(struct pthread_mutex_t));
@@ -322,7 +322,7 @@ int pthread_mutex_init(struct pthread_mutex_t * restrict mutex,
 }
 
 // Mutex function used to destroy the inputted mutex
-int pthread_mutex_destroy(struct pthread_mutex_t * mutex){
+int pthread_mutex_destroy(pthread_mutex_t * mutex){
 	// To delete the mutex, simply free all of the linked list and the mutex itself
 	while (mutex->head != NULL){
 		struct thread_node * temp = mutex->head;
@@ -335,8 +335,9 @@ int pthread_mutex_destroy(struct pthread_mutex_t * mutex){
 }
 
 // Mutex function used to lock current thread or block until resource available
-int pthread_mutex_lock(struct pthread_mutex_t * mutex){
+int pthread_mutex_lock(pthread_mutex_t * mutex){
 
+	mutex = (struct pthread_mutex_t *) mutex;
 	// If mutex doesn't exist, then return error
 	if (mutex == NULL){
 		return -1;
@@ -365,8 +366,9 @@ int pthread_mutex_lock(struct pthread_mutex_t * mutex){
 }
 
 // Mutex unlock function used to unlock a resource and notify first blocked
-int pthread_mutex_unlock(struct pthread_mutex_t *mutex){
+int pthread_mutex_unlock(pthread_mutex_t *mutex){
 	
+	mutex = (struct pthread_mutex_t *) mutex;
 	// If mutex doesn't exist or mutex is already free then return error
 	if (mutex == NULL || mutex->head == NULL){
 		return -1;
@@ -398,7 +400,7 @@ int pthread_mutex_unlock(struct pthread_mutex_t *mutex){
 }
 
 // Barrier initialization function that creates barrier
-int pthread_barrier_init(struct pthread_barrier_t *restrict barrier,
+int pthread_barrier_init(pthread_barrier_t *restrict barrier,
 						const pthread_barrierattr_t *restrict attr,
 						unsigned count){
 	// Check if count value is valid
@@ -417,7 +419,8 @@ int pthread_barrier_init(struct pthread_barrier_t *restrict barrier,
 }
 
 // Barrier function used to destroy current barrier
-int pthread_barrier_destroy(struct pthread_barrier_t *barrier){
+int pthread_barrier_destroy(pthread_barrier_t *barrier){
+	barrier = (struct pthread_barrier_t *) barrier;
 	// Check if barrier exists
 	if (!barrier){
 		printf("Error: No barrier specified\n");
@@ -433,7 +436,7 @@ int pthread_barrier_destroy(struct pthread_barrier_t *barrier){
 }
 
 // Barrier function used to block current thread until barrier broken
-int pthread_barrier_wait(struct pthread_barrier_t *barrier){
+int pthread_barrier_wait(pthread_barrier_t *barrier){
 	ualarm(0,0);
 	// Check if barrier exists
 	if (!barrier){
