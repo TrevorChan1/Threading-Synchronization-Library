@@ -452,7 +452,7 @@ int pthread_barrier_wait(pthread_barrier_t *barrier){
 		printf("Error: No barrier specified\n");
 		return -1;
 	}
-
+	printf("here\n");
 	// Increment number of blocks currently in the barrier, if it's equal to count then awaken all threads
 	my_barrier->data.num_blocked++;
 	if (my_barrier->data.num_blocked >= my_barrier->data.count){
