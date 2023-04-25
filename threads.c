@@ -78,17 +78,23 @@ struct thread_node {
 
 // Mutex data structure that contains status and the head of the linked list of blocked threads
 // Head points to thread that currently has the lock
-typedef struct haha {
-	enum lock_status status;
-	struct thread_node * head;
-	struct thread_node * tail;
-}pthread_mutex_t;
+typedef union my_pthread_mutex_t {
+	struct my_mutex_data {
+		enum lock_status status;
+		struct thread_node * head;
+		struct thread_node * tail;
+	}data;
+	pthread_mutex_t sys_mutex;
+}my_pthread_mutex_t;
 
-typedef struct hehe {
-	unsigned int count;
-	unsigned int num_blocked;
-	struct thread_control_block ** threads;
-}pthread_barrier_t;
+typedef union my_pthread_barrier_t {
+	struct my_barrier_data {
+		unsigned int count;
+		unsigned int num_blocked;
+		struct thread_control_block ** threads;
+	}data;
+	pthread_barrier_t sys_barrier;
+}my_pthread_barrier_t;
 
 /***  Code Section  ***/
 
@@ -314,32 +320,33 @@ pthread_t pthread_self(void)
 int pthread_mutex_init(pthread_mutex_t * restrict mutex,
 						const pthread_mutexattr_t * restrict attr){
 	// Initialize data structure for mutex (set to free and empty LL)
-	mutex = (struct pthread_mutex_t *) malloc(sizeof(struct pthread_mutex_t));
-	mutex->status = MS_FREE;
-	mutex->head = NULL;
+	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
+	my_mutex->data.status = MS_FREE;
+	my_mutex->data.head = NULL;
+	my_mutex->data.tail = NULL;
 
 	return 0;
 }
 
 // Mutex function used to destroy the inputted mutex
 int pthread_mutex_destroy(pthread_mutex_t * mutex){
+	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 	// To delete the mutex, simply free all of the linked list and the mutex itself
-	while (mutex->head != NULL){
-		struct thread_node * temp = mutex->head;
-		mutex->head = mutex->head->next;
+	while (my_mutex->data.head != NULL){
+		struct thread_node * temp = my_mutex->data.head;
+		my_mutex->data.head = my_mutex->data.head->next;
 		free(temp);
 	}
-	free(mutex);
 
 	return 0;
 }
 
 // Mutex function used to lock current thread or block until resource available
 int pthread_mutex_lock(pthread_mutex_t * mutex){
+	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 
-	mutex = (struct pthread_mutex_t *) mutex;
 	// If mutex doesn't exist, then return error
-	if (mutex == NULL){
+	if (my_mutex == NULL){
 		return -1;
 	}
 
@@ -349,15 +356,15 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 	cur_thread->thread = TCB->currentThread;
 
 	// If mutex is free, simply lock it and give it to the current thread
-	if (mutex->status == MS_FREE){
-		mutex->head = cur_thread;
-		mutex->tail = cur_thread;
-		mutex->status = MS_LOCKED;
+	if (my_mutex->data.status == MS_FREE){
+		my_mutex->data.head = cur_thread;
+		my_mutex->data.tail = cur_thread;
+		my_mutex->data.status = MS_LOCKED;
 	}
 	// If mutex is being used, add current thread to linked list and block current thread
 	else{
-		mutex->tail->next = cur_thread;
-		mutex->tail = cur_thread;
+		my_mutex->data.tail->next = cur_thread;
+		my_mutex->data.tail = cur_thread;
 		TCB->currentThread->status = TS_BLOCKED;
 		schedule(0);
 	}
@@ -367,32 +374,32 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 
 // Mutex unlock function used to unlock a resource and notify first blocked
 int pthread_mutex_unlock(pthread_mutex_t *mutex){
+	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 	
-	mutex = (struct pthread_mutex_t *) mutex;
 	// If mutex doesn't exist or mutex is already free then return error
-	if (mutex == NULL || mutex->head == NULL){
+	if (my_mutex == NULL || my_mutex->data.head == NULL){
 		return -1;
 	}
 
 	// If mutex is already free, do nothing
-	if (mutex->status == MS_FREE)
+	if (my_mutex->data.status == MS_FREE)
 		return 0;
 	
 	// Set up the next thread to be used
-	struct thread_node * temp = mutex->head;
-	mutex->head = mutex->head->next;
+	struct thread_node * temp = my_mutex->data.head;
+	my_mutex->data.head = my_mutex->data.head->next;
 	free(temp);
 
 	// Schedule the next free thread as the next one
-	if (mutex->head != NULL){
-		mutex->head->thread->status = TS_READY;
-		TCB->lastThread->nextThread = mutex->head->thread;
-		TCB->lastThread = mutex->head->thread;
+	if (my_mutex->data.head != NULL){
+		my_mutex->data.head->thread->status = TS_READY;
+		TCB->lastThread->nextThread = my_mutex->data.head->thread;
+		TCB->lastThread = my_mutex->data.head->thread;
 		TCB->lastThread->nextThread = NULL;
 	}
 	// If there are no more waiting threads, set mutex to free
 	else{
-		mutex->status = MS_FREE;
+		my_mutex->data.status = MS_FREE;
 	}
 
 	return 0;
@@ -403,40 +410,41 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 int pthread_barrier_init(pthread_barrier_t *restrict barrier,
 						const pthread_barrierattr_t *restrict attr,
 						unsigned count){
+	
 	// Check if count value is valid
 	if (count <= 0){
 		printf("Error: Not a valid count value\n");
 		return EINVAL;
 	}
+	my_pthread_barrier_t * my_barrier = (my_pthread_barrier_t *) barrier;
 
 	// Initialize the data structure and allocate memory for it
-	barrier = (struct pthread_barrier_t *) malloc(sizeof(struct pthread_barrier_t));
-	barrier->count = count;
-	barrier->num_blocked = 0;
-	barrier->threads = (struct thread_control_block **) malloc(count * sizeof(struct thread_control_block *));
+	my_barrier->data.count = count;
+	my_barrier->data.num_blocked = 0;
+	my_barrier->data.threads = (struct thread_control_block **) malloc(count * sizeof(struct thread_control_block *));
 
 	return 0;
 }
 
 // Barrier function used to destroy current barrier
 int pthread_barrier_destroy(pthread_barrier_t *barrier){
-	barrier = (struct pthread_barrier_t *) barrier;
+	my_pthread_barrier_t * my_barrier = (my_pthread_barrier_t *) barrier;
 	// Check if barrier exists
 	if (!barrier){
 		printf("Error: No barrier specified\n");
 	}
 
 	// Iterate through all of the threads listed and free them
-	for (int i = 0; i < barrier->num_blocked; i++){
-		free(barrier->threads[i]);
+	for (int i = 0; i < my_barrier->data.num_blocked; i++){
+		free(my_barrier->data.threads[i]);
 	}
-	free(barrier);
 	return 0;
 
 }
 
 // Barrier function used to block current thread until barrier broken
 int pthread_barrier_wait(pthread_barrier_t *barrier){
+	my_pthread_barrier_t * my_barrier = (my_pthread_barrier_t *) barrier;
 	ualarm(0,0);
 	// Check if barrier exists
 	if (!barrier){
@@ -444,13 +452,13 @@ int pthread_barrier_wait(pthread_barrier_t *barrier){
 	}
 
 	// Increment number of blocks currently in the barrier, if it's equal to count then awaken all threads
-	barrier->num_blocked++;
-	if (barrier->num_blocked >= barrier->count){
+	my_barrier->data.num_blocked++;
+	if (my_barrier->data.num_blocked >= my_barrier->data.count){
 		// Iterate through all threads in barrier and set all to ready and add them to the schedule
 		for (int i = 0; i < barrier->count; i++){
-			barrier->threads[i]->status = TS_READY;
-			TCB->lastThread->nextThread = barrier->threads[i];
-			TCB->lastThread = barrier->threads[i];
+			my_barrier->data.threads[i]->status = TS_READY;
+			TCB->lastThread->nextThread = my_barrier->data.threads[i];
+			TCB->lastThread = my_barrier->data.threads[i];
 		}
 		// Initialize timer: Send SIGALRM in 50ms
 		if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
@@ -464,7 +472,7 @@ int pthread_barrier_wait(pthread_barrier_t *barrier){
 	// If barrier is not full yet, add current thread to the barrier and schedule it to get taken out of schedule (return 0 when back)
 	else{
 		// Add thread to list and block it
-		barrier->threads[barrier->num_blocked-1] = TCB->currentThread;
+		my_barrier->data.threads[my_barrier->data.num_blocked-1] = TCB->currentThread;
 		TCB->currentThread->status = TS_BLOCKED;
 		schedule(0);
 		return 0;
