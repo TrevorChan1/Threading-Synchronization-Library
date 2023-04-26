@@ -390,21 +390,19 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 		}
 		// If mutex is being used, initialize queue if needed and add it to the queue
 		else{
-			// If queue is empty, initialize to the current values
+			// If queue is empty, initialize to the current values (Queue ONLY has threads WAITING FOR LOCK)
 			if (my_mutex->data.head == NULL){
 				my_mutex->data.head = cur_thread;
 				my_mutex->data.tail = cur_thread;
-				cur_thread->status = TS_BLOCKED;
-				schedule(0);
 			}
 			
 			// If queue is not empty, just append to the end
 			else{
 				my_mutex->data.tail->nextThread = cur_thread;
 				my_mutex->data.tail = cur_thread;
-				cur_thread->status = TS_BLOCKED;
-				schedule(0);
 			}
+			cur_thread->status = TS_BLOCKED;
+			schedule(0);
 		}
 	}
 	// Unlock UALARM signals
@@ -433,23 +431,25 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 		unlock();
 		return 0;
 	}
-	
-	// Set up the next thread to be used
-	struct thread_control_block * temp = my_mutex->data.head;
-	my_mutex->data.head = my_mutex->data.head->nextThread;
-	free(temp);
 
-	// Schedule the next free thread as the next one
-	if (my_mutex->data.head != NULL){
-		my_mutex->data.head->status = TS_READY;
-		TCB->lastThread->nextThread = my_mutex->data.head;
-		TCB->lastThread = my_mutex->data.head;
-		TCB->lastThread->nextThread = NULL;
-	}
-	// If there are no more waiting threads, set mutex to free
-	else{
+	// Add the current thread back onto the run queue
+	struct thread_control_block * temp = my_mutex->data.head->nextThread;
+	my_mutex->data.head->status = TS_READY;
+	TCB->lastThread->nextThread = my_mutex->data.head;
+	TCB->lastThread = my_mutex->data.head;
+	TCB->lastThread->nextThread = NULL;
+
+	// If current thread was only thread left in the queue, set it to free
+	if (temp == NULL){
 		my_mutex->data.status = MS_FREE;
+		my_mutex->data.head = NULL;
+		my_mutex->data.tail = NULL;
 	}
+	// If there are more threads, prepare next one as head
+	else{
+		my_mutex->data.head = temp;
+	}
+
 	// Unlock UALARM signals
 	unlock();
 
