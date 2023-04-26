@@ -416,7 +416,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 	lock();
 
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
-	
+	printf("unlock 1\n");
 	// If mutex doesn't exist or mutex is already free then return error
 	if (my_mutex == NULL || my_mutex->data.head == NULL || my_mutex->data.status == MS_DESTROYED){
 		// Unlock UALARM signals
@@ -430,7 +430,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 		unlock();
 		return 0;
 	}
-
+	printf("unlock 2\n");
 	// Add the current thread back onto the run queue
 	struct thread_control_block * temp = my_mutex->data.head->nextThread;
 	my_mutex->data.head->status = TS_READY;
@@ -440,7 +440,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 
 	// If current thread was only thread left in the queue, set it to free
 	if (temp == NULL){
-		my_mutex->data.status = MS_FREE;
+		printf("unlock 3\n");
 		my_mutex->data.head = NULL;
 		my_mutex->data.tail = NULL;
 	}
