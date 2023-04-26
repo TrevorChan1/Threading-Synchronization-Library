@@ -418,6 +418,8 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 			// If the current thread is blocked, then take it out of the linked list
 			if (TCB->currentThread->nextThread != NULL){
 				printf("here2\n");
+				if (TCB->currentThread == cur_thread->nextThread)
+					printf("Wtf\n");
 				TCB->currentThread = cur_thread->nextThread;
 				TCB->currentThread->status = TS_RUNNING;
 				cur_thread->nextThread = NULL;
