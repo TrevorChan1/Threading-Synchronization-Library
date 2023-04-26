@@ -11,7 +11,7 @@ void *routine1(void *arg) {
 		if (i % 100000000 == 0)
 			printf("%lu says %u\n", pthread_self(), i);
 	}
-	pthread_mutex_unlock(&mutex);
+	printf("Unlock: %d\n", pthread_mutex_unlock(&mutex));
 	return NULL;
 }
 
@@ -21,7 +21,7 @@ void *routine2(void *arg) {
 		if (i % 100000000 == 0)
 			printf("%lu says %u\n", pthread_self(), i);
 	}
-	pthread_mutex_unlock(&mutex);
+	printf("Unlock: %d\n", pthread_mutex_unlock(&mutex));
 	return NULL;
 }
 
