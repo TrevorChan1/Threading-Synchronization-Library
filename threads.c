@@ -350,7 +350,7 @@ int pthread_mutex_destroy(pthread_mutex_t * mutex){
 	lock();
 
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
-	my_mutex->data.status == MS_DESTROYED;
+	my_mutex->data.status = MS_DESTROYED;
 	
 
 	// Unlock UALARM signals
@@ -447,7 +447,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 	else{
 		my_mutex->data.head = temp;
 	}
-
+	my_mutex->data.status = MS_FREE;
 	// Unlock UALARM signals
 	unlock();
 
