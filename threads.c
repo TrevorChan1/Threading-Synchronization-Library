@@ -98,6 +98,22 @@ typedef union my_pthread_barrier_t {
 
 /***  Code Section  ***/
 
+// Helper function that locks the signals
+static void lock(){
+	sigset_t sig;
+	sigemptyset(&sig);
+	sigaddset(&sig, SIGALRM);
+	sigprocmask(SIG_BLOCK, &sig, NULL);
+}
+
+// Helper function that unlocks signals
+static void unlock(){
+	sigset_t sig;
+	sigemptyset(&sig);
+	sigaddset(&sig, SIGALRM);
+	sigprocmask(SIG_BLOCK, &sig, NULL);
+}
+
 // SIGALRM handler that saves current context and moves onto the next function
 static void schedule(int sig)
 {
@@ -319,17 +335,24 @@ pthread_t pthread_self(void)
 // Mutex function that initializes the mutex values
 int pthread_mutex_init(pthread_mutex_t * restrict mutex,
 						const pthread_mutexattr_t * restrict attr){
+	// Lock UALARM signals
+	lock();
 	// Initialize data structure for mutex (set to free and empty LL)
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 	my_mutex->data.status = MS_FREE;
 	my_mutex->data.head = NULL;
 	my_mutex->data.tail = NULL;
 
+	// Unlock UALARM signals
+	unlock();
 	return 0;
 }
 
 // Mutex function used to destroy the inputted mutex
 int pthread_mutex_destroy(pthread_mutex_t * mutex){
+	// Lock UALARM signals
+	lock();
+
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 	// To delete the mutex, simply free all of the linked list and the mutex itself
 	while (my_mutex->data.head != NULL){
@@ -338,15 +361,23 @@ int pthread_mutex_destroy(pthread_mutex_t * mutex){
 		free(temp);
 	}
 
+	// Unlock UALARM signals
+	unlock();
+
 	return 0;
 }
 
 // Mutex function used to lock current thread or block until resource available
 int pthread_mutex_lock(pthread_mutex_t * mutex){
+	// Lock UALARM signals
+	lock();
+
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 
 	// If mutex doesn't exist, then return error
 	if (my_mutex == NULL){
+		// Unlock UALARM signals
+		unlock();
 		return -1;
 	}
 
@@ -368,22 +399,32 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 		TCB->currentThread->status = TS_BLOCKED;
 		schedule(0);
 	}
+	// Unlock UALARM signals
+	unlock();
 	return 0;
 
 }
 
 // Mutex unlock function used to unlock a resource and notify first blocked
 int pthread_mutex_unlock(pthread_mutex_t *mutex){
+	// Lock UALARM signals
+	lock();
+
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 	
 	// If mutex doesn't exist or mutex is already free then return error
 	if (my_mutex == NULL || my_mutex->data.head == NULL){
+		// Unlock UALARM signals
+		unlock();
 		return -1;
 	}
 
 	// If mutex is already free, do nothing
-	if (my_mutex->data.status == MS_FREE)
+	if (my_mutex->data.status == MS_FREE){
+		// Unlock UALARM signals
+		unlock();
 		return 0;
+	}
 	
 	// Set up the next thread to be used
 	struct thread_node * temp = my_mutex->data.head;
@@ -401,6 +442,8 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 	else{
 		my_mutex->data.status = MS_FREE;
 	}
+	// Unlock UALARM signals
+	unlock();
 
 	return 0;
 
@@ -410,10 +453,14 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 int pthread_barrier_init(pthread_barrier_t *restrict barrier,
 						const pthread_barrierattr_t *restrict attr,
 						unsigned count){
+	// Lock UALARM signals
+	lock();
 	
 	// Check if count value is valid
 	if (count <= 0){
-		printf("Error: Not a valid count value\n");
+		// printf("Error: Not a valid count value\n");
+		// Unlock UALARM signals
+		unlock();
 		return EINVAL;
 	}
 	my_pthread_barrier_t * my_barrier = (my_pthread_barrier_t *) barrier;
@@ -423,15 +470,23 @@ int pthread_barrier_init(pthread_barrier_t *restrict barrier,
 	my_barrier->data.num_blocked = 0;
 	my_barrier->data.threads = (struct thread_control_block **) malloc(count * sizeof(struct thread_control_block *));
 
+	// Unlock UALARM signals
+	unlock();
 	return 0;
 }
 
 // Barrier function used to destroy current barrier
 int pthread_barrier_destroy(pthread_barrier_t *barrier){
+
+	// Lock UALARM signals
+	lock();
+
 	my_pthread_barrier_t * my_barrier = (my_pthread_barrier_t *) barrier;
 	// Check if barrier exists
 	if (my_barrier == NULL){
-		printf("Error: No barrier specified\n");
+		// printf("Error: No barrier specified\n");
+		// Unlock UALARM signals
+		unlock();
 		return -1;
 	}
 
@@ -439,17 +494,24 @@ int pthread_barrier_destroy(pthread_barrier_t *barrier){
 	for (int i = 0; i < my_barrier->data.num_blocked; i++){
 		free(my_barrier->data.threads[i]);
 	}
+	// Lock UALARM signals
+	unlock();
 	return 0;
 
 }
 
 // Barrier function used to block current thread until barrier broken
 int pthread_barrier_wait(pthread_barrier_t *barrier){
+
+	// Lock UALARM signals
+	lock();
 	my_pthread_barrier_t * my_barrier = (my_pthread_barrier_t *) barrier;
-	ualarm(0,0);
+
 	// Check if barrier exists
 	if (my_barrier == NULL){
-		printf("Error: No barrier specified\n");
+		// printf("Error: No barrier specified\n");
+		// Unlock UALARM signals
+		unlock();
 		return -1;
 	}
 
@@ -461,13 +523,16 @@ int pthread_barrier_wait(pthread_barrier_t *barrier){
 			my_barrier->data.threads[i]->status = TS_READY;
 			TCB->lastThread->nextThread = my_barrier->data.threads[i];
 			TCB->lastThread = my_barrier->data.threads[i];
-			printf("here2\n");
 		}
 		// Initialize timer: Send SIGALRM in 50ms
 		if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
 			printf("ERROR: Timer not set\n");
+			// Unlock UALARM signals
+			unlock();
 			exit(-1);
 		}
+		// Unlock UALARM signals
+		unlock();
 		//return PTHREAD_BARRIER_SERIAL_THREAD;
 		return -1;
 	}
@@ -477,6 +542,8 @@ int pthread_barrier_wait(pthread_barrier_t *barrier){
 		my_barrier->data.threads[my_barrier->data.num_blocked-1] = TCB->currentThread;
 		TCB->currentThread->status = TS_BLOCKED;
 		schedule(0);
+		// Unlock UALARM signals
+		unlock();
 		return 0;
 	}
 }
