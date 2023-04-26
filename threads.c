@@ -164,9 +164,11 @@ static void schedule(int sig)
 			
 			// If the current thread is blocked, then take it out of the linked list
 			if (TCB->currentThread->nextThread != NULL){
+				struct thread_control_block * temp = TCB->currentThread;
 				printf("here2\n");
 				TCB->currentThread = TCB->currentThread->nextThread;
 				TCB->currentThread->status = TS_RUNNING;
+				temp->nextThread = NULL;
 				siglongjmp(TCB->currentThread->currentContext, 1);
 			}
 			// If rest is empty, just set everything to NULL (shouldn't reach here)
@@ -391,8 +393,6 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 		// If mutex is being used, initialize queue if needed and add it to the queue
 		else{
 			// If empty, set the next values to be used
-			TCB->currentThread = next_thread;
-			cur_thread->nextThread = NULL;
 
 			// If queue is empty, initialize to the current values (Queue ONLY has threads WAITING FOR LOCK)
 			if (my_mutex->data.head == NULL){
