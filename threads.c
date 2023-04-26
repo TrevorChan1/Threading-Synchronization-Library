@@ -375,6 +375,7 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 
 	// Continue to loop until it gets the lock (in case thread before it in run queue locks)
 	while(1){
+		my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 		// Initialize thread node to be added to the linked list
 		struct thread_control_block * cur_thread = TCB->currentThread;
 		cur_thread->nextThread = NULL;
@@ -402,7 +403,7 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 			}
 			cur_thread->status = TS_BLOCKED;
 			unlock();
-			schedule(0);
+			schedule(SIGALRM);
 		}
 	}
 	printf("Done with loop\n");
@@ -550,7 +551,7 @@ int pthread_barrier_wait(pthread_barrier_t *barrier){
 		// Add thread to list and block it
 		my_barrier->data.threads[my_barrier->data.num_blocked-1] = TCB->currentThread;
 		TCB->currentThread->status = TS_BLOCKED;
-		schedule(0);
+		schedule(SIGALRM);
 		// Unlock UALARM signals
 		unlock();
 		return 0;
