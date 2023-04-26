@@ -383,6 +383,7 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 		
 		// If mutex is free, simply lock it and give it to the current thread (continue on with its day)
 		if (my_mutex->data.status == MS_FREE){
+			printf("here\n");
 			my_mutex->data.status = MS_LOCKED;
 			break;
 		}
