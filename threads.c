@@ -155,29 +155,29 @@ static void schedule(int sig)
 			free(current);
 			current = NULL;
 		}
-		else if (TCB->currentThread->status == TS_BLOCKED){
-			// Initialize timer: Send SIGALRM in 50ms
-			if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
-				printf("ERROR: Timer not set\n");
-				exit(-1);
-			}
+		// else if (TCB->currentThread->status == TS_BLOCKED){
+		// 	// Initialize timer: Send SIGALRM in 50ms
+		// 	if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
+		// 		printf("ERROR: Timer not set\n");
+		// 		exit(-1);
+		// 	}
 			
-			// If the current thread is blocked, then take it out of the linked list
-			if (TCB->currentThread->nextThread != NULL){
-				struct thread_control_block * temp = TCB->currentThread;
-				printf("here2\n");
-				TCB->currentThread = TCB->currentThread->nextThread;
-				TCB->currentThread->status = TS_RUNNING;
-				temp->nextThread = NULL;
-				siglongjmp(TCB->currentThread->currentContext, 1);
-			}
-			// If rest is empty, just set everything to NULL (shouldn't reach here)
-			else{
-				printf("Whoops! You shouldn't be here\n");
-				TCB->currentThread = NULL;
-				TCB->lastThread = NULL;
-			}
-		}
+		// 	// If the current thread is blocked, then take it out of the linked list
+		// 	if (TCB->currentThread->nextThread != NULL){
+		// 		struct thread_control_block * temp = TCB->currentThread;
+		// 		printf("here2\n");
+		// 		TCB->currentThread = TCB->currentThread->nextThread;
+		// 		TCB->currentThread->status = TS_RUNNING;
+		// 		temp->nextThread = NULL;
+		// 		siglongjmp(TCB->currentThread->currentContext, 1);
+		// 	}
+		// 	// If rest is empty, just set everything to NULL (shouldn't reach here)
+		// 	else{
+		// 		printf("Whoops! You shouldn't be here\n");
+		// 		TCB->currentThread = NULL;
+		// 		TCB->lastThread = NULL;
+		// 	}
+		// }
 		else{
 			printf("In scheduler (running)\n");
 			// Initialize timer: Send SIGALRM in 50ms
@@ -408,8 +408,31 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 				my_mutex->data.tail = cur_thread;
 			}
 			cur_thread->status = TS_BLOCKED;
-			unlock();
-			schedule(SIGALRM);
+			
+			// Initialize timer: Send SIGALRM in 50ms
+			if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
+				printf("ERROR: Timer not set\n");
+				exit(-1);
+			}
+
+			// If the current thread is blocked, then take it out of the linked list
+			if (TCB->currentThread->nextThread != NULL){
+				printf("here2\n");
+				TCB->currentThread = cur_thread->nextThread;
+				TCB->currentThread->status = TS_RUNNING;
+				cur_thread->nextThread = NULL;
+
+				unlock();
+				siglongjmp(TCB->currentThread->currentContext, 1);
+			}
+
+			// If rest is empty, just set everything to NULL (shouldn't reach here)
+			else{
+				printf("Whoops! You shouldn't be here\n");
+				TCB->currentThread = NULL;
+				TCB->lastThread = NULL;
+				unlock();
+			}
 		}
 	}
 	printf("Done with loop\n");
