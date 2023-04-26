@@ -468,14 +468,13 @@ int pthread_barrier_wait(pthread_barrier_t *barrier){
 			printf("ERROR: Timer not set\n");
 			exit(-1);
 		}
-		printf("here\n");
 		//return PTHREAD_BARRIER_SERIAL_THREAD;
 		return -1;
 	}
 	// If barrier is not full yet, add current thread to the barrier and schedule it to get taken out of schedule (return 0 when back)
 	else{
 		// Add thread to list and block it
-		my_barrier->data.threads[my_barrier->data.count-1] = TCB->currentThread;
+		my_barrier->data.threads[my_barrier->data.num_blocked-1] = TCB->currentThread;
 		TCB->currentThread->status = TS_BLOCKED;
 		schedule(0);
 		return 0;
