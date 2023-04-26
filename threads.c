@@ -456,26 +456,24 @@ int pthread_barrier_wait(pthread_barrier_t *barrier){
 	// Increment number of blocks currently in the barrier, if it's equal to count then awaken all threads
 	my_barrier->data.num_blocked++;
 	if (my_barrier->data.num_blocked >= my_barrier->data.count){
-		printf("count: %d\n", my_barrier->data.count);
 		// Iterate through all threads in barrier and set all to ready and add them to the schedule
 		for (int i = 0; i < my_barrier->data.count-1; i++){
-			printf("i: %d\n", i);
 			my_barrier->data.threads[i]->status = TS_READY;
 			TCB->lastThread->nextThread = my_barrier->data.threads[i];
 			TCB->lastThread = my_barrier->data.threads[i];
+			printf("here2\n");
 		}
 		// Initialize timer: Send SIGALRM in 50ms
 		if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
 			printf("ERROR: Timer not set\n");
 			exit(-1);
 		}
-
+		printf("here\n");
 		//return PTHREAD_BARRIER_SERIAL_THREAD;
 		return -1;
 	}
 	// If barrier is not full yet, add current thread to the barrier and schedule it to get taken out of schedule (return 0 when back)
 	else{
-		printf("here2\n");
 		// Add thread to list and block it
 		my_barrier->data.threads[my_barrier->data.count-1] = TCB->currentThread;
 		TCB->currentThread->status = TS_BLOCKED;
