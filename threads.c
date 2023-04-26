@@ -535,6 +535,7 @@ int pthread_barrier_wait(pthread_barrier_t *barrier){
 			unlock();
 			exit(-1);
 		}
+		my_barrier->data.num_blocked = 0;
 		// Unlock UALARM signals
 		unlock();
 		//return PTHREAD_BARRIER_SERIAL_THREAD;
