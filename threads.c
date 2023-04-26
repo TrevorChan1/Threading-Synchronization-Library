@@ -458,7 +458,7 @@ int pthread_barrier_wait(pthread_barrier_t *barrier){
 	if (my_barrier->data.num_blocked >= my_barrier->data.count){
 		printf("count: %d\n", my_barrier->data.count);
 		// Iterate through all threads in barrier and set all to ready and add them to the schedule
-		for (int i = 0; i < my_barrier->data.count; i++){
+		for (int i = 0; i < my_barrier->data.count-1; i++){
 			printf("i: %d\n", i);
 			my_barrier->data.threads[i]->status = TS_READY;
 			TCB->lastThread->nextThread = my_barrier->data.threads[i];
