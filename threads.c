@@ -155,31 +155,29 @@ static void schedule(int sig)
 			free(current);
 			current = NULL;
 		}
-		// else if (TCB->currentThread->status == TS_BLOCKED){
-		// 	// Initialize timer: Send SIGALRM in 50ms
-		// 	if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
-		// 		printf("ERROR: Timer not set\n");
-		// 		exit(-1);
-		// 	}
+		else if (TCB->currentThread->status == TS_BLOCKED){
+			// Initialize timer: Send SIGALRM in 50ms
+			if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
+				printf("ERROR: Timer not set\n");
+				exit(-1);
+			}
 			
-		// 	// If the current thread is blocked, then take it out of the linked list
-		// 	if (TCB->currentThread->nextThread != NULL){
-		// 		struct thread_control_block * temp = TCB->currentThread;
-		// 		printf("here2\n");
-		// 		TCB->currentThread = TCB->currentThread->nextThread;
-		// 		TCB->currentThread->status = TS_RUNNING;
-		// 		temp->nextThread = NULL;
-		// 		siglongjmp(TCB->currentThread->currentContext, 1);
-		// 	}
-		// 	// If rest is empty, just set everything to NULL (shouldn't reach here)
-		// 	else{
-		// 		printf("Whoops! You shouldn't be here\n");
-		// 		TCB->currentThread = NULL;
-		// 		TCB->lastThread = NULL;
-		// 	}
-		// }
+			// If the current thread is blocked, then take it out of the linked list
+			if (TCB->currentThread->nextThread != NULL){
+				struct thread_control_block * temp = TCB->currentThread;
+				TCB->currentThread = TCB->currentThread->nextThread;
+				TCB->currentThread->status = TS_RUNNING;
+				temp->nextThread = NULL;
+				siglongjmp(TCB->currentThread->currentContext, 1);
+			}
+			// If rest is empty, just set everything to NULL (shouldn't reach here)
+			else{
+				printf("Whoops! You shouldn't be here\n");
+				TCB->currentThread = NULL;
+				TCB->lastThread = NULL;
+			}
+		}
 		else{
-			printf("In scheduler (running)\n");
 			// Initialize timer: Send SIGALRM in 50ms
 			if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
 				printf("ERROR: Timer not set\n");
@@ -190,7 +188,6 @@ static void schedule(int sig)
 
 			// If a next thread exists, set all the pointers and jump to new thread
 			if (TCB->currentThread->nextThread != NULL){
-				printf("scheduling next\n");
 				// Move from current thread to next thread and move current to last thread
 				TCB->lastThread->nextThread = TCB->currentThread;
 				TCB->lastThread = TCB->currentThread;
@@ -342,7 +339,6 @@ int pthread_mutex_init(pthread_mutex_t * restrict mutex,
 	my_mutex->data.status = MS_FREE;
 	my_mutex->data.head = NULL;
 	my_mutex->data.tail = NULL;
-	printf("init!\n");
 	return 0;
 }
 
@@ -383,10 +379,8 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 		// Initialize thread node to be added to the linked list
 		struct thread_control_block * cur_thread = TCB->currentThread;
 
-		printf("In loop: %d", (int) pthread_self());
 		// If mutex is free, simply lock it and give it to the current thread (continue on with its day)
 		if (my_mutex->data.status == MS_FREE){
-			printf("Was free now locked\n");
 			my_mutex->data.status = MS_LOCKED;
 			break;
 		}
@@ -396,48 +390,20 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 
 			// If queue is empty, initialize to the current values (Queue ONLY has threads WAITING FOR LOCK)
 			if (my_mutex->data.head == NULL){
-				printf("Queue was empty\n");
 				my_mutex->data.head = cur_thread;
 				my_mutex->data.tail = cur_thread;
 			}
 			
 			// If queue is not empty, just append to the end
 			else{
-				printf("Regular add\n");
 				my_mutex->data.tail->nextThread = cur_thread;
 				my_mutex->data.tail = cur_thread;
 			}
 			cur_thread->status = TS_BLOCKED;
-			
-			// Initialize timer: Send SIGALRM in 50ms
-			if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
-				printf("ERROR: Timer not set\n");
-				exit(-1);
-			}
-
-			// If the current thread is blocked, then take it out of the linked list
-			if (TCB->currentThread->nextThread != NULL){
-				printf("here2\n");
-				if (TCB->currentThread == cur_thread->nextThread)
-					printf("Wtf\n");
-				TCB->currentThread = cur_thread->nextThread;
-				TCB->currentThread->status = TS_RUNNING;
-				cur_thread->nextThread = NULL;
-
-				unlock();
-				siglongjmp(TCB->currentThread->currentContext, 1);
-			}
-
-			// If rest is empty, just set everything to NULL (shouldn't reach here)
-			else{
-				printf("Whoops! You shouldn't be here\n");
-				TCB->currentThread = NULL;
-				TCB->lastThread = NULL;
-				unlock();
-			}
+			unlock();
+			schedule(SIGALRM);
 		}
 	}
-	printf("Done with loop\n");
 	// Unlock UALARM signals
 	unlock();
 	return 0;
@@ -450,7 +416,6 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 	lock();
 
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
-	printf("unlock 1\n");
 	// If mutex doesn't exist or mutex is already free then return error
 	if (my_mutex == NULL || my_mutex->data.status == MS_DESTROYED){
 		// Unlock UALARM signals
@@ -464,7 +429,6 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 		unlock();
 		return 0;
 	}
-	printf("unlock 2\n");
 	// Add the current thread back onto the run queue
 	struct thread_control_block * temp = my_mutex->data.head->nextThread;
 	my_mutex->data.head->status = TS_READY;
@@ -474,7 +438,6 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 
 	// If current thread was only thread left in the queue, set it to free
 	if (temp == NULL){
-		printf("unlock 3\n");
 		my_mutex->data.head = NULL;
 		my_mutex->data.tail = NULL;
 	}
