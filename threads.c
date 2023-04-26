@@ -67,7 +67,8 @@ bool available[MAX_THREADS];
 
 enum lock_status {
 	MS_LOCKED,
-	MS_FREE
+	MS_FREE,
+	MS_DESTROYED
 };
 
 // Mutex data structure that contains status and the head of the linked list of blocked threads
@@ -85,6 +86,7 @@ typedef union my_pthread_barrier_t {
 	struct my_barrier_data {
 		unsigned int count;
 		unsigned int num_blocked;
+		unsigned int valid;
 		struct thread_control_block ** threads;
 	}data;
 	pthread_barrier_t sys_barrier;
@@ -347,13 +349,14 @@ int pthread_mutex_destroy(pthread_mutex_t * mutex){
 	// Lock UALARM signals
 	lock();
 
+	// Check if mutex exists
+	if (mutex == NULL){
+		printf("Error: mutex doesn't exist");
+		return -1;
+	}
+
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
-	// // To delete the mutex, simply free all of the linked list and the mutex itself
-	// while (my_mutex->data.head != NULL){
-	// 	struct thread_control_block * temp = my_mutex->data.head;
-	// 	my_mutex->data.head = my_mutex->data.head->nextThread;
-	// 	free(temp);
-	// }
+	my_mutex->data.status == MS_DESTROYED;
 	
 
 	// Unlock UALARM signals
@@ -370,7 +373,7 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 
 	// If mutex doesn't exist, then return error
-	if (my_mutex == NULL){
+	if (my_mutex == NULL || my_mutex->data.status == MS_DESTROYED){
 		// Unlock UALARM signals
 		unlock();
 		return -1;
@@ -420,7 +423,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 	
 	// If mutex doesn't exist or mutex is already free then return error
-	if (my_mutex == NULL || my_mutex->data.head == NULL){
+	if (my_mutex == NULL || my_mutex->data.head == NULL || my_mutex->data.status == MS_DESTROYED){
 		// Unlock UALARM signals
 		unlock();
 		return -1;
@@ -477,6 +480,7 @@ int pthread_barrier_init(pthread_barrier_t *restrict barrier,
 	// Initialize the data structure and allocate memory for it
 	my_barrier->data.count = count;
 	my_barrier->data.num_blocked = 0;
+	my_barrier->data.valid = 1;
 	my_barrier->data.threads = (struct thread_control_block **) malloc(count * sizeof(struct thread_control_block *));
 
 	// Unlock UALARM signals
@@ -499,10 +503,9 @@ int pthread_barrier_destroy(pthread_barrier_t *barrier){
 		return -1;
 	}
 
-	// // Iterate through all of the threads listed and free them
-	// for (int i = 0; i < my_barrier->data.num_blocked; i++){
-	// 	free(my_barrier->data.threads[i]);
-	// }
+	my_barrier->data.valid = 0;
+	
+
 	// Lock UALARM signals
 	unlock();
 	return 0;
@@ -517,7 +520,7 @@ int pthread_barrier_wait(pthread_barrier_t *barrier){
 	my_pthread_barrier_t * my_barrier = (my_pthread_barrier_t *) barrier;
 
 	// Check if barrier exists
-	if (my_barrier == NULL){
+	if (my_barrier == NULL || my_barrier->data.valid == 0){
 		// printf("Error: No barrier specified\n");
 		// Unlock UALARM signals
 		unlock();
