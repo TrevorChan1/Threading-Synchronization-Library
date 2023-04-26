@@ -331,16 +331,12 @@ pthread_t pthread_self(void)
 // Mutex function that initializes the mutex values
 int pthread_mutex_init(pthread_mutex_t * restrict mutex,
 						const pthread_mutexattr_t * restrict attr){
-	// Lock UALARM signals
-	lock();
 	// Initialize data structure for mutex (set to free and empty LL)
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 	my_mutex->data.status = MS_FREE;
 	my_mutex->data.head = NULL;
 	my_mutex->data.tail = NULL;
 
-	// Unlock UALARM signals
-	unlock();
 	return 0;
 }
 
