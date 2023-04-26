@@ -177,6 +177,7 @@ static void schedule(int sig)
 			}
 		}
 		else{
+			printf("In scheduler (running)\n");
 			// Initialize timer: Send SIGALRM in 50ms
 			if (ualarm(SCHEDULER_INTERVAL_USECS, 0) < 0){
 				printf("ERROR: Timer not set\n");
@@ -187,6 +188,7 @@ static void schedule(int sig)
 
 			// If a next thread exists, set all the pointers and jump to new thread
 			if (TCB->currentThread->nextThread != NULL){
+				printf("scheduling next\n");
 				// Move from current thread to next thread and move current to last thread
 				TCB->lastThread->nextThread = TCB->currentThread;
 				TCB->lastThread = TCB->currentThread;
