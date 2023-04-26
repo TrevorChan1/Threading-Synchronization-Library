@@ -375,22 +375,37 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 		return -1;
 	}
 	// Check if mutex initialized
-	// Initialize thread node to be added to the linked list
-	struct thread_control_block * cur_thread = TCB->currentThread;
-	cur_thread->nextThread = NULL;
 
-	// If mutex is free, simply lock it and give it to the current thread
-	if (my_mutex->data.status == MS_FREE){
-		my_mutex->data.head = cur_thread;
-		my_mutex->data.tail = cur_thread;
-		my_mutex->data.status = MS_LOCKED;
-	}
-	// If mutex is being used, add current thread to linked list and block current thread
-	else{
-		my_mutex->data.tail->nextThread = cur_thread;
-		my_mutex->data.tail = cur_thread;
-		TCB->currentThread->status = TS_BLOCKED;
-		schedule(0);
+
+	// Continue to loop until it gets the lock (in case thread before it in run queue locks)
+	while(1){
+		// Initialize thread node to be added to the linked list
+		struct thread_control_block * cur_thread = TCB->currentThread;
+		cur_thread->nextThread = NULL;
+		
+		// If mutex is free, simply lock it and give it to the current thread (continue on with its day)
+		if (my_mutex->data.status == MS_FREE){
+			my_mutex->data.status = MS_LOCKED;
+			break;
+		}
+		// If mutex is being used, initialize queue if needed and add it to the queue
+		else{
+			// If queue is empty, initialize to the current values
+			if (my_mutex->data.head == NULL){
+				my_mutex->data.head = cur_thread;
+				my_mutex->data.tail = cur_thread;
+				cur_thread->status = TS_BLOCKED;
+				schedule(0);
+			}
+			
+			// If queue is not empty, just append to the end
+			else{
+				my_mutex->data.tail->nextThread = cur_thread;
+				my_mutex->data.tail = cur_thread;
+				cur_thread->status = TS_BLOCKED;
+				schedule(0);
+			}
+		}
 	}
 	// Unlock UALARM signals
 	unlock();
