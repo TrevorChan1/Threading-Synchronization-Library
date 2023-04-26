@@ -384,7 +384,6 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 		// If mutex is free, simply lock it and give it to the current thread (continue on with its day)
 		if (my_mutex->data.status == MS_FREE){
 			my_mutex->data.status = MS_LOCKED;
-			unlock();
 			break;
 		}
 		// If mutex is being used, initialize queue if needed and add it to the queue
@@ -401,6 +400,7 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 				my_mutex->data.tail = cur_thread;
 			}
 			cur_thread->status = TS_BLOCKED;
+			unlock();
 			schedule(0);
 		}
 	}
