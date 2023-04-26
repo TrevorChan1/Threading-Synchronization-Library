@@ -382,7 +382,7 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 		my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 		// Initialize thread node to be added to the linked list
 		struct thread_control_block * cur_thread = TCB->currentThread;
-		struct thread_control_block * next_thread = TCB->currentThread->nextThread;
+
 		printf("In loop: %d", (int) pthread_self());
 		// If mutex is free, simply lock it and give it to the current thread (continue on with its day)
 		if (my_mutex->data.status == MS_FREE){
