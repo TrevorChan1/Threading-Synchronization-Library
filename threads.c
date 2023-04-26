@@ -164,12 +164,14 @@ static void schedule(int sig)
 			
 			// If the current thread is blocked, then take it out of the linked list
 			if (TCB->currentThread->nextThread != NULL){
+				printf("here2\n");
 				TCB->currentThread = TCB->currentThread->nextThread;
 				TCB->currentThread->status = TS_RUNNING;
 				siglongjmp(TCB->currentThread->currentContext, 1);
 			}
 			// If rest is empty, just set everything to NULL (shouldn't reach here)
 			else{
+				printf("here\n");
 				TCB->currentThread = NULL;
 				TCB->lastThread = NULL;
 			}
@@ -336,7 +338,7 @@ int pthread_mutex_init(pthread_mutex_t * restrict mutex,
 	my_mutex->data.status = MS_FREE;
 	my_mutex->data.head = NULL;
 	my_mutex->data.tail = NULL;
-
+	printf("init!\n");
 	return 0;
 }
 
@@ -376,9 +378,10 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 		// Initialize thread node to be added to the linked list
 		struct thread_control_block * cur_thread = TCB->currentThread;
 		cur_thread->nextThread = NULL;
-		
+		printf("In loop: %d", (int) pthread_self());
 		// If mutex is free, simply lock it and give it to the current thread (continue on with its day)
 		if (my_mutex->data.status == MS_FREE){
+			printf("Was free now locked\n");
 			my_mutex->data.status = MS_LOCKED;
 			break;
 		}
@@ -386,12 +389,14 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 		else{
 			// If queue is empty, initialize to the current values (Queue ONLY has threads WAITING FOR LOCK)
 			if (my_mutex->data.head == NULL){
+				printf("Queue was empty\n");
 				my_mutex->data.head = cur_thread;
 				my_mutex->data.tail = cur_thread;
 			}
 			
 			// If queue is not empty, just append to the end
 			else{
+				printf("Regular add\n");
 				my_mutex->data.tail->nextThread = cur_thread;
 				my_mutex->data.tail = cur_thread;
 			}
@@ -400,6 +405,7 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 			schedule(0);
 		}
 	}
+	printf("Done with loop\n");
 	// Unlock UALARM signals
 	unlock();
 	return 0;
