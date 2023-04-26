@@ -70,19 +70,13 @@ enum lock_status {
 	MS_FREE
 };
 
-// Node (used for linked list of threads blocked for lock)
-struct thread_node {
-	struct thread_control_block * thread;
-	struct thread_node * next;
-};
-
 // Mutex data structure that contains status and the head of the linked list of blocked threads
 // Head points to thread that currently has the lock
 typedef union my_pthread_mutex_t {
 	struct my_mutex_data {
 		enum lock_status status;
-		struct thread_node * head;
-		struct thread_node * tail;
+		struct thread_control_block * head;
+		struct thread_control_block * tail;
 	}data;
 	pthread_mutex_t sys_mutex;
 }my_pthread_mutex_t;
@@ -356,8 +350,8 @@ int pthread_mutex_destroy(pthread_mutex_t * mutex){
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 	// To delete the mutex, simply free all of the linked list and the mutex itself
 	while (my_mutex->data.head != NULL){
-		struct thread_node * temp = my_mutex->data.head;
-		my_mutex->data.head = my_mutex->data.head->next;
+		struct thread_control_block * temp = my_mutex->data.head;
+		my_mutex->data.head = my_mutex->data.head->nextThread;
 		free(temp);
 	}
 
@@ -380,11 +374,10 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 		unlock();
 		return -1;
 	}
-
+	// Check if mutex initialized
 	// Initialize thread node to be added to the linked list
-	struct thread_node * cur_thread = (struct thread_node *) malloc(sizeof(struct thread_node));
-	cur_thread->next = NULL;
-	cur_thread->thread = TCB->currentThread;
+	struct thread_control_block * cur_thread = TCB->currentThread;
+	cur_thread->nextThread = NULL;
 
 	// If mutex is free, simply lock it and give it to the current thread
 	if (my_mutex->data.status == MS_FREE){
@@ -394,7 +387,7 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 	}
 	// If mutex is being used, add current thread to linked list and block current thread
 	else{
-		my_mutex->data.tail->next = cur_thread;
+		my_mutex->data.tail->nextThread = cur_thread;
 		my_mutex->data.tail = cur_thread;
 		TCB->currentThread->status = TS_BLOCKED;
 		schedule(0);
@@ -427,15 +420,15 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 	}
 	
 	// Set up the next thread to be used
-	struct thread_node * temp = my_mutex->data.head;
-	my_mutex->data.head = my_mutex->data.head->next;
+	struct thread_control_block * temp = my_mutex->data.head;
+	my_mutex->data.head = my_mutex->data.head->nextThread;
 	free(temp);
 
 	// Schedule the next free thread as the next one
 	if (my_mutex->data.head != NULL){
-		my_mutex->data.head->thread->status = TS_READY;
-		TCB->lastThread->nextThread = my_mutex->data.head->thread;
-		TCB->lastThread = my_mutex->data.head->thread;
+		my_mutex->data.head->status = TS_READY;
+		TCB->lastThread->nextThread = my_mutex->data.head;
+		TCB->lastThread = my_mutex->data.head;
 		TCB->lastThread->nextThread = NULL;
 	}
 	// If there are no more waiting threads, set mutex to free
