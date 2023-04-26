@@ -380,7 +380,7 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 		my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 		// Initialize thread node to be added to the linked list
 		struct thread_control_block * cur_thread = TCB->currentThread;
-		cur_thread->nextThread = NULL;
+		struct thread_control_block * next_thread = TCB->currentThread->nextThread;
 		printf("In loop: %d", (int) pthread_self());
 		// If mutex is free, simply lock it and give it to the current thread (continue on with its day)
 		if (my_mutex->data.status == MS_FREE){
@@ -390,6 +390,10 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 		}
 		// If mutex is being used, initialize queue if needed and add it to the queue
 		else{
+			// If empty, set the next values to be used
+			TCB->currentThread = next_thread;
+			cur_thread->nextThread = NULL;
+
 			// If queue is empty, initialize to the current values (Queue ONLY has threads WAITING FOR LOCK)
 			if (my_mutex->data.head == NULL){
 				printf("Queue was empty\n");
