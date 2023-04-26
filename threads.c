@@ -107,7 +107,7 @@ static void unlock(){
 	sigset_t sig;
 	sigemptyset(&sig);
 	sigaddset(&sig, SIGALRM);
-	sigprocmask(SIG_BLOCK, &sig, NULL);
+	sigprocmask(SIG_UNBLOCK, &sig, NULL);
 }
 
 // SIGALRM handler that saves current context and moves onto the next function
