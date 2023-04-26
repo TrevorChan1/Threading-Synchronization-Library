@@ -349,12 +349,6 @@ int pthread_mutex_destroy(pthread_mutex_t * mutex){
 	// Lock UALARM signals
 	lock();
 
-	// Check if mutex exists
-	if (mutex == NULL){
-		printf("Error: mutex doesn't exist");
-		return -1;
-	}
-
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 	my_mutex->data.status == MS_DESTROYED;
 	
