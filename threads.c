@@ -348,12 +348,13 @@ int pthread_mutex_destroy(pthread_mutex_t * mutex){
 	lock();
 
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
-	// To delete the mutex, simply free all of the linked list and the mutex itself
-	while (my_mutex->data.head != NULL){
-		struct thread_control_block * temp = my_mutex->data.head;
-		my_mutex->data.head = my_mutex->data.head->nextThread;
-		free(temp);
-	}
+	// // To delete the mutex, simply free all of the linked list and the mutex itself
+	// while (my_mutex->data.head != NULL){
+	// 	struct thread_control_block * temp = my_mutex->data.head;
+	// 	my_mutex->data.head = my_mutex->data.head->nextThread;
+	// 	free(temp);
+	// }
+	
 
 	// Unlock UALARM signals
 	unlock();
@@ -498,10 +499,10 @@ int pthread_barrier_destroy(pthread_barrier_t *barrier){
 		return -1;
 	}
 
-	// Iterate through all of the threads listed and free them
-	for (int i = 0; i < my_barrier->data.num_blocked; i++){
-		free(my_barrier->data.threads[i]);
-	}
+	// // Iterate through all of the threads listed and free them
+	// for (int i = 0; i < my_barrier->data.num_blocked; i++){
+	// 	free(my_barrier->data.threads[i]);
+	// }
 	// Lock UALARM signals
 	unlock();
 	return 0;
