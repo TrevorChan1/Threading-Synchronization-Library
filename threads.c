@@ -418,14 +418,14 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 	printf("unlock 1\n");
 	// If mutex doesn't exist or mutex is already free then return error
-	if (my_mutex == NULL || my_mutex->data.head == NULL || my_mutex->data.status == MS_DESTROYED){
+	if (my_mutex == NULL || my_mutex->data.status == MS_DESTROYED){
 		// Unlock UALARM signals
 		unlock();
 		return -1;
 	}
 
 	// If mutex is already free, do nothing
-	if (my_mutex->data.status == MS_FREE){
+	if (my_mutex->data.status == MS_FREE || my_mutex->data.head == NULL){
 		// Unlock UALARM signals
 		unlock();
 		return 0;
