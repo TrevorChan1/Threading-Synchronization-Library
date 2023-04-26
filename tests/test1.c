@@ -7,7 +7,7 @@ pthread_barrier_t barrier;
 
 void *routine1(void *arg) {
 	pthread_mutex_lock(&mutex);
-	for (unsigned int i = 0; i < 10000000000; ++i) {
+	for (unsigned int i = 0; i < 1000000000; ++i) {
 		if (i % 100000000 == 0)
 			printf("%lu says %u\n", pthread_self(), i);
 	}
@@ -17,7 +17,7 @@ void *routine1(void *arg) {
 
 void *routine2(void *arg) {
 	pthread_mutex_lock(&mutex);
-	for (unsigned int i = 0; i < 10000000000; ++i) {
+	for (unsigned int i = 0; i < 1000000000; ++i) {
 		if (i % 100000000 == 0)
 			printf("%lu says %u\n", pthread_self(), i);
 	}
