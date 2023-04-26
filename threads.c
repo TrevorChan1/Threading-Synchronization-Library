@@ -365,7 +365,7 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 	lock();
 
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
-
+	printf("here\n");
 	// If mutex doesn't exist, then return error
 	if (my_mutex == NULL || my_mutex->data.status == MS_DESTROYED){
 		// Unlock UALARM signals
@@ -373,7 +373,7 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 		return -1;
 	}
 	// Check if mutex initialized
-
+	printf("here2\n");
 
 	// Continue to loop until it gets the lock (in case thread before it in run queue locks)
 	while(1){
