@@ -437,7 +437,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 	TCB->lastThread->nextThread = my_mutex->data.head;
 	TCB->lastThread = my_mutex->data.head;
 	TCB->lastThread->nextThread = NULL;
-
+	printf("here to free\n");
 	// If current thread was only thread left in the queue, set it to free
 	if (temp == NULL){
 		my_mutex->data.head = NULL;
@@ -449,6 +449,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 	}
 	my_mutex->data.status = MS_FREE;
 	// Unlock UALARM signals
+	printf("here to free2\n");
 	unlock();
 
 	return 0;
