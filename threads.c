@@ -379,6 +379,11 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 		// Initialize thread node to be added to the linked list
 		struct thread_control_block * cur_thread = TCB->currentThread;
 
+		// Check if thread still exists
+		if (cur_thread == NULL){
+			return -1;
+		}
+
 		// If mutex is free, simply lock it and give it to the current thread (continue on with its day)
 		if (my_mutex->data.status == MS_FREE){
 			my_mutex->data.status = MS_LOCKED;
@@ -400,12 +405,11 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 				my_mutex->data.tail = cur_thread;
 			}
 			
-			if (cur_thread){
-				cur_thread->status = TS_BLOCKED;
-				unlock();
-				schedule(SIGALRM);
-			}
+			cur_thread->status = TS_BLOCKED;
+			unlock();
+			schedule(SIGALRM);
 		}
+		unlock();
 	}
 	// Unlock UALARM signals
 	unlock();
