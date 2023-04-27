@@ -330,16 +330,11 @@ pthread_t pthread_self(void)
 int pthread_mutex_init(pthread_mutex_t * restrict mutex,
 						const pthread_mutexattr_t * restrict attr){
 	// Initialize data structure for mutex (set to free and empty LL)
-	printf("init 1\n");
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
-	printf("he\n");
 	my_mutex->data.status = MS_FREE;
-	printf("mm\n");
 	my_mutex->data.head = NULL;
-	printf("mm2\n");
 	my_mutex->data.tail = NULL;
-	printf("init 2\n");
-	return 0;
+	return pthread_mutex_init(&my_mutex->sys_mutex, NULL);
 }
 
 // Mutex function used to destroy the inputted mutex
