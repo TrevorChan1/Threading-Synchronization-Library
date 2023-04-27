@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
+#define MAX_THREADS 128
 
 pthread_mutex_t mutex;
 pthread_barrier_t barrier;
@@ -32,11 +33,11 @@ void *routine(void *arg) {
 // Main function that creates 10 threads then exits
 int main() {
 
-	pthread_t tid[10];
+	pthread_t tid[MAX_THREADS];
 	pthread_mutex_init(&mutex, NULL);
 
     // Create 10 separate threads
-    for (int i = 0; i < 10; i ++){
+    for (int i = 0; i < MAX_THREADS; i ++){
         pthread_create(tid + i, NULL, &routine, NULL);
     }
 	pthread_exit(NULL);

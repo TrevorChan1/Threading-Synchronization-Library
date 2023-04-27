@@ -390,14 +390,12 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 
 			// If queue is empty, initialize to the current values (Queue ONLY has threads WAITING FOR LOCK)
 			if (my_mutex->data.head == NULL){
-				printf("Queue was empty, now not\n");
 				my_mutex->data.head = cur_thread;
 				my_mutex->data.tail = cur_thread;
 			}
 			
 			// If queue is not empty, just append to the end
 			else{
-				printf("Added onto block queue\n");
 				my_mutex->data.tail->nextThread = cur_thread;
 				my_mutex->data.tail = cur_thread;
 			}
