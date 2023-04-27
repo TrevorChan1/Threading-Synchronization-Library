@@ -11,7 +11,7 @@ pthread_barrier_t barrier;
 void *routine(void *arg) {
     for (int i = 0; i < 10; i++){
         pthread_mutex_lock(&mutex);
-        printf("Thread %lu has ran %d times!\n", pthread_self(), i);
+        printf("Thread %lu has ran %d times!\n", pthread_self(), i+1);
         sleep(3);
 
         pthread_mutex_unlock(&mutex);
