@@ -1,6 +1,7 @@
 #include "../threads.h"
 #include <stdio.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 pthread_mutex_t mutex;
 pthread_barrier_t barrier;
@@ -8,15 +9,15 @@ pthread_barrier_t barrier;
 // Function to be run that locks, prints, unlocks, sleeps, then does it again (each thread should be run twice)
 void *routine(void *arg) {
 	pthread_mutex_lock(&mutex);
-    printf("Thread %lu has ran once!\n");
-    pthreaD_mutex_unlock(&mutex);
+    printf("Thread %lu has ran once!\n", pthread_self());
+    pthread_mutex_unlock(&mutex);
 
     // Sleep for 2 seconds
     sleep(2);
 
     pthread_mutex_lock(&mutex);
-    printf("Thread %lu has ran twice!\n");
-    pthreaD_mutex_unlock(&mutex);
+    printf("Thread %lu has ran twice!\n", pthread_self());
+    pthread_mutex_unlock(&mutex);
 	return NULL;
 }
 
