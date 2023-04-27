@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <../threads.h>
 
 /* How many threads (aside from main) to create */
 #define THREAD_CNT 3
