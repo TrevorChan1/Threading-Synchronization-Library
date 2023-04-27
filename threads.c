@@ -170,12 +170,7 @@ static void schedule(int sig)
 				temp->nextThread = NULL;
 				siglongjmp(TCB->currentThread->currentContext, 1);
 			}
-			// If rest is empty, just set everything to NULL (shouldn't reach here)
-			else{
-				// printf("Whoops! You shouldn't be here\n");
-				TCB->currentThread = NULL;
-				TCB->lastThread = NULL;
-			}
+
 		}
 		else{
 			// Initialize timer: Send SIGALRM in 50ms
@@ -375,6 +370,9 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 
 	// Continue to loop until it gets the lock (in case thread before it in run queue locks)
 	while(1){
+		// Lock UALARM signals
+		lock();
+		
 		my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 		// Initialize thread node to be added to the linked list
 		struct thread_control_block * cur_thread = TCB->currentThread;
@@ -440,22 +438,23 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 		unlock();
 		return 0;
 	}
-	// Add the current thread back onto the run queue
-	struct thread_control_block * temp = my_mutex->data.head->nextThread;
-	my_mutex->data.head->status = TS_READY;
-	TCB->lastThread->nextThread = my_mutex->data.head;
-	TCB->lastThread = my_mutex->data.head;
-	TCB->lastThread->nextThread = NULL;
 
-	// If current thread was only thread left in the queue, set it to free
-	if (temp == NULL){
-		my_mutex->data.head = NULL;
-		my_mutex->data.tail = NULL;
-	}
-	// If there are more threads, prepare next one as head
-	else{
+	// Add all threads back into the run queue
+	while (my_mutex->data.head != NULL){
+		struct thread_control_block * temp = my_mutex->data.head->nextThread;
+		my_mutex->data.head->status = TS_READY;
+		TCB->lastThread->nextThread = my_mutex->data.head;
+		TCB->lastThread = my_mutex->data.head;
+		TCB->lastThread->nextThread = NULL;
+
 		my_mutex->data.head = temp;
 	}
+
+
+	// Reset the block queue
+	my_mutex->data.head = NULL;
+	my_mutex->data.tail = NULL;
+
 	my_mutex->data.status = MS_FREE;
 	// Unlock UALARM signals
 	unlock();
