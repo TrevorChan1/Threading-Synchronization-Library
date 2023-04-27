@@ -57,8 +57,8 @@ int main(int argc, char **argv) {
 		               (void *)(intptr_t)((i + 1) * COUNTER_FACTOR));
 	}
     printf("here\n");
-	pthread_mutex_t *restrict mutex1;
-	pthread_mutex_t *restrict mutex2;
+	pthread_mutex_t * mutex1;
+	pthread_mutex_t * mutex2;
 	pthread_mutex_t *restrict mutex3;
 	pthread_mutex_init(mutex1,NULL);
 	pthread_mutex_init(mutex2,NULL);
