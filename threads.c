@@ -73,13 +73,13 @@ enum lock_status {
 
 // Mutex data structure that contains status and the head of the linked list of blocked threads
 // Head points to thread that currently has the lock
-typedef union mutex_union {
+typedef union my_pthread_mutex_t {
 	struct my_mutex_data {
 		enum lock_status status;
 		struct thread_control_block * head;
 		struct thread_control_block * tail;
 	}data;
-	pthread_mutex_t mutex;
+	pthread_mutex_t sys_mutex;
 }my_pthread_mutex_t;
 
 typedef union my_pthread_barrier_t {
@@ -170,7 +170,12 @@ static void schedule(int sig)
 				temp->nextThread = NULL;
 				siglongjmp(TCB->currentThread->currentContext, 1);
 			}
-
+			// If rest is empty, just set everything to NULL (shouldn't reach here)
+			else{
+				printf("Whoops! You shouldn't be here\n");
+				TCB->currentThread = NULL;
+				TCB->lastThread = NULL;
+			}
 		}
 		else{
 			// Initialize timer: Send SIGALRM in 50ms
@@ -332,7 +337,6 @@ int pthread_mutex_init(pthread_mutex_t * restrict mutex,
 	// Initialize data structure for mutex (set to free and empty LL)
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 	my_mutex->data.status = MS_FREE;
-	my_mutex->mutex = *mutex;
 	my_mutex->data.head = NULL;
 	my_mutex->data.tail = NULL;
 	return 0;
