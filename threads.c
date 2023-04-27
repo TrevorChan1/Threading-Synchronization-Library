@@ -73,7 +73,7 @@ enum lock_status {
 
 // Mutex data structure that contains status and the head of the linked list of blocked threads
 // Head points to thread that currently has the lock
-typedef union my_mutex {
+typedef union my_pthread_mutex_t {
 	struct my_mutex_data {
 		enum lock_status status;
 		struct thread_control_block * head;
@@ -331,7 +331,8 @@ int pthread_mutex_init(pthread_mutex_t * restrict mutex,
 						const pthread_mutexattr_t * restrict attr){
 	// Initialize data structure for mutex (set to free and empty LL)
 	printf("init 1\n");
-	my_pthread_barrier_t * my_mutex = (my_pthread_mutex_t *) mutex;
+	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
+	printf("he\n");
 	my_mutex->data.status = MS_FREE;
 	my_mutex->data.head = NULL;
 	my_mutex->data.tail = NULL;
