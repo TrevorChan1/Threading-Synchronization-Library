@@ -335,7 +335,7 @@ int pthread_mutex_init(pthread_mutex_t * restrict mutex,
 	my_mutex->mutex = *mutex;
 	my_mutex->data.head = NULL;
 	my_mutex->data.tail = NULL;
-	return 0
+	return 0;
 }
 
 // Mutex function used to destroy the inputted mutex
