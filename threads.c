@@ -427,6 +427,10 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 
 	// If mutex is already free, do nothing
 	if (my_mutex->data.status == MS_FREE || my_mutex->data.head == NULL){
+		// If there are no blocked threads and it's being unlocked, simply set the status to free
+		if (my_mutex->data.status == MS_LOCKED && my_mutex->data.head == NULL){
+			my_mutex->data.status = MS_FREE;
+		}
 		// Unlock UALARM signals
 		unlock();
 		return 0;
