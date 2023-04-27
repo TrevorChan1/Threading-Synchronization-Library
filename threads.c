@@ -172,7 +172,7 @@ static void schedule(int sig)
 			}
 			// If rest is empty, just set everything to NULL (shouldn't reach here)
 			else{
-				printf("Whoops! You shouldn't be here\n");
+				// printf("Whoops! You shouldn't be here\n");
 				TCB->currentThread = NULL;
 				TCB->lastThread = NULL;
 			}
@@ -401,9 +401,12 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 				my_mutex->data.tail->nextThread = cur_thread;
 				my_mutex->data.tail = cur_thread;
 			}
-			cur_thread->status = TS_BLOCKED;
-			unlock();
-			schedule(SIGALRM);
+			
+			if (cur_thread){
+				cur_thread->status = TS_BLOCKED;
+				unlock();
+				schedule(SIGALRM);
+			}
 		}
 	}
 	// Unlock UALARM signals
@@ -441,7 +444,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 	TCB->lastThread->nextThread = my_mutex->data.head;
 	TCB->lastThread = my_mutex->data.head;
 	TCB->lastThread->nextThread = NULL;
-	printf("here to free\n");
+
 	// If current thread was only thread left in the queue, set it to free
 	if (temp == NULL){
 		my_mutex->data.head = NULL;
@@ -453,7 +456,6 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 	}
 	my_mutex->data.status = MS_FREE;
 	// Unlock UALARM signals
-	printf("here to free2\n");
 	unlock();
 
 	return 0;
