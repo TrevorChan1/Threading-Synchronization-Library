@@ -334,7 +334,9 @@ int pthread_mutex_init(pthread_mutex_t * restrict mutex,
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 	printf("he\n");
 	my_mutex->data.status = MS_FREE;
+	printf("mm\n");
 	my_mutex->data.head = NULL;
+	printf("mm2\n");
 	my_mutex->data.tail = NULL;
 	printf("init 2\n");
 	return 0;
