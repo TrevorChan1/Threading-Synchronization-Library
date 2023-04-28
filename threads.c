@@ -371,6 +371,7 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 		unlock();
 		return -1;
 	}
+	printf("here\n");
 	// Check if mutex initialized
 
 
