@@ -364,7 +364,7 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 	lock();
 
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
-
+	printf("Made it into lock\n");
 	// If mutex doesn't exist, then return error
 	if (my_mutex == NULL || my_mutex->data.status == MS_DESTROYED || TCB->currentThread == NULL){
 		// Unlock UALARM signals
@@ -391,10 +391,12 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 		// If mutex is free, simply lock it and give it to the current thread (continue on with its day)
 		if (my_mutex->data.status == MS_FREE){
 			my_mutex->data.status = MS_LOCKED;
+			printf("Thread %lu has the conch\n", pthread_self());
 			break;
 		}
 		// If mutex is being used, initialize queue if needed and add it to the queue
 		else{
+			printf("Thread %lu blocked\n", pthread_self());
 			// If empty, set the next values to be used
 
 			// If queue is empty, initialize to the current values (Queue ONLY has threads WAITING FOR LOCK)

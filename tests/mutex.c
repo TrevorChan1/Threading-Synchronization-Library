@@ -42,21 +42,25 @@ void *foo() {
 }
 
 int main(int argc, char **argv) {
+    printf("here\n");
     for (int i = 0; i < NUM_MUTEX; i++) {
         if (pthread_mutex_init(&mutex[i], NULL) != 0) {
             printf("mutex init failed\n");
         }
     }
+    printf("here\n");
     for (int i = 0; i < NUM_MUTEX; i++) {
         if (pthread_mutex_lock(&mutex[i]) != 0) {
             printf("mutex lock failed\n");
         }
     }
+    printf("here\n");
     for (int i = 0; i < NUM_THEARD; i++) {
         if (pthread_create(&threads[i], NULL, foo, NULL) != 0) {
             printf("mutex create failed\n");
         }
     }
+    printf("here\n");
 
     sleep(2);
 
