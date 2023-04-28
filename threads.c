@@ -349,8 +349,8 @@ int pthread_mutex_destroy(pthread_mutex_t * mutex){
 	// Lock UALARM signals
 	lock();
 
-	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
-	my_mutex->data.status = MS_DESTROYED;
+	// my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
+	// my_mutex->data.status = MS_DESTROYED;
 	
 
 	// Unlock UALARM signals
