@@ -72,7 +72,7 @@ enum lock_status {
 };
 
 // Mutex data structure that contains status and the head of the linked list of blocked threads
-// Head points to thread that currently has the lock
+// Head points to first blocked thread so mutex_unlock can awaken them in order
 typedef union my_pthread_mutex_t {
 	struct my_mutex_data {
 		enum lock_status status;

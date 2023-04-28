@@ -37,3 +37,14 @@ The function first turns off any current alarms to not be interrupted and frees 
 **http://www.csl.mtu.edu/cs4411.ck/common/Coroutines.pdf**: Used to better understand setjmp, longjmp, and how they are used for threading
 **http://web.eecs.utk.edu/~jplank/plank/classes/cs360/360/notes/Setjmp/lecture.html**: Used to understand how signal handlers interact with setjmp and longjmp
 **Man pages for ualarm, pthread_create, etc.**
+
+## Synchronization
+This library also implements synchronization through mutexes and barriers. The mutexes enforce that only one thread can own that specific lock at a time and the barriers ensure that a certain number of threads will have to reach the barrier before getting to continue running.
+
+### Mutex
+The Mutex functions allow for the initialization, locking, and unlocking of the mutex data type. The functions use the pthread.h library's version of the mutex data type and pads on my own data struct to be used when handling blocking.
+
+When a thread acquires a lock, any thread that tries to acquire that same lock afterwards will be BLOCKED (taken out of the run queue). It will not be allowed to run until the owner of the lock calls unlock, in which case the first thread to block will be awoken and added back to the run queue. Blocked threads are handled via a linked list that provides the lock to the blocked threads in a FCFS fashion.
+
+### Barrier
+The barrier functions allow for the initialization of barriers with a specified number of threads to catch before allowing them all to run. The pthread_barrier_wait function can be called on a thread to be caught into the barrier. When `count` threads are caught in the barrier, the barrier will then free all of them to start running again and add them back to the run queue. All of the calls to pthread_barrier_wait will return 0 except for the last thread to enter which will return -1.
