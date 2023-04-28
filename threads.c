@@ -366,12 +366,11 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 	printf("Made it into lock\n");
 	// If mutex doesn't exist, then return error
-	if (my_mutex == NULL || my_mutex->data.status == MS_DESTROYED || TCB->currentThread == NULL){
+	if (my_mutex->data.status == MS_DESTROYED || TCB->currentThread == NULL){
 		// Unlock UALARM signals
 		unlock();
 		return -1;
 	}
-	printf("here\n");
 	// Check if mutex initialized
 
 
@@ -431,7 +430,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 	// If mutex doesn't exist or mutex is already free then return error
-	if (my_mutex == NULL || my_mutex->data.status == MS_DESTROYED || TCB->currentThread == NULL){
+	if (my_mutex->data.status == MS_DESTROYED || TCB->currentThread == NULL){
 		// Unlock UALARM signals
 		unlock();
 		return -1;
