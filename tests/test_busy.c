@@ -57,14 +57,13 @@ int main(int argc, char **argv) {
 		               (void *)(intptr_t)((i + 1) * COUNTER_FACTOR));
 	}
     printf("here\n");
-	pthread_mutex_t * mutex1;
-	pthread_mutex_t * mutex2;
-	pthread_mutex_t *restrict mutex3;
-	pthread_mutex_init(mutex1,NULL);
-	pthread_mutex_init(mutex2,NULL);
+	pthread_mutex_t mutex1;
+	pthread_mutex_t mutex2;
+	pthread_mutex_init(&mutex1,NULL);
+	pthread_mutex_init(&mutex2,NULL);
     printf("here2\n");
-	pthread_mutex_destroy(mutex2);
-	pthread_mutex_destroy(mutex1);
+	pthread_mutex_destroy(&mutex2);
+	pthread_mutex_destroy(&mutex1);
     printf("here3\n");
 #if HAVE_PTHREAD_JOIN == 0
 	/* Wait for longer than the most busy of the other threads */

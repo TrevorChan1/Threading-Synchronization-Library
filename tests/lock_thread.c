@@ -16,7 +16,7 @@ After the first thread relesaes the lock, the second thread should now be schedu
 Both threads also change a shared global variable "changeme" so you can observe the exclusivity property
 */
 /* How many threads (aside from main) to create */
-#define THREAD_CNT 1
+#define THREAD_CNT 15
 
 /* pthread_join is not implemented in homework 2 */
 #define HAVE_PTHREAD_JOIN 0
