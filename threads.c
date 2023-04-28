@@ -374,7 +374,7 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 	// Check if mutex initialized
 
 	// Continue to loop until it gets the lock (in case thread before it in run queue locks)
-	while(1){
+	// while(1){
 		// Lock UALARM signals
 		lock();
 		
@@ -391,7 +391,7 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 		if (my_mutex->data.status == MS_FREE){
 			my_mutex->data.status = MS_LOCKED;
 			printf("Thread %lu has the conch\n", pthread_self());
-			break;
+			// break;
 		}
 		// If mutex is being used, initialize queue if needed and add it to the queue
 		else{
@@ -415,7 +415,7 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 			schedule(SIGALRM);
 		}
 		unlock();
-	}
+	// }
 	// Unlock UALARM signals
 	unlock();
 	return 0;
