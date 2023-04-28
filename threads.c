@@ -366,13 +366,12 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 	printf("Made it into lock\n");
 	// If mutex doesn't exist, then return error
-	if (my_mutex->data.status == MS_DESTROYED || TCB->currentThread == NULL){
+	if (my_mutex == NULL || my_mutex->data.status == MS_DESTROYED || TCB->currentThread == NULL){
 		// Unlock UALARM signals
 		unlock();
 		return -1;
 	}
 	// Check if mutex initialized
-
 
 	// Continue to loop until it gets the lock (in case thread before it in run queue locks)
 	while(1){
@@ -430,7 +429,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 	// If mutex doesn't exist or mutex is already free then return error
-	if (my_mutex->data.status == MS_DESTROYED || TCB->currentThread == NULL){
+	if (my_mutex == NULL || my_mutex->data.status == MS_DESTROYED || TCB->currentThread == NULL){
 		// Unlock UALARM signals
 		unlock();
 		return -1;
@@ -447,23 +446,30 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex){
 		return 0;
 	}
 
-	// Add all threads back into the run queue
-	while (my_mutex->data.head != NULL){
-		struct thread_control_block * temp = my_mutex->data.head->nextThread;
-		my_mutex->data.head->status = TS_READY;
-		TCB->lastThread->nextThread = my_mutex->data.head;
-		TCB->lastThread = my_mutex->data.head;
-		TCB->lastThread->nextThread = NULL;
+	// // Add all threads back into the run queue
+	// while (my_mutex->data.head != NULL){
+	// 	struct thread_control_block * temp = my_mutex->data.head->nextThread;
+	// 	my_mutex->data.head->status = TS_READY;
+	// 	TCB->lastThread->nextThread = my_mutex->data.head;
+	// 	TCB->lastThread = my_mutex->data.head;
+	// 	TCB->lastThread->nextThread = NULL;
 
-		my_mutex->data.head = temp;
+	// 	my_mutex->data.head = temp;
+	// }
+
+	// Know that head is NOT null, so free next ready thread
+	struct thread_control_block * temp = my_mutex->data.head->nextThread;
+	my_mutex->data.head->status = TS_READY;
+	TCB->lastThread->nextThread = my_mutex->data.head;
+	TCB->lastThread = my_mutex->data.head;
+	TCB->lastThread->nextThread = NULL;
+	my_mutex->data.head = temp;
+
+	if (temp == NULL){
+		my_mutex->data.head = NULL;
+		my_mutex->data.tail = NULL;
 	}
 
-
-	// Reset the block queue
-	my_mutex->data.head = NULL;
-	my_mutex->data.tail = NULL;
-
-	my_mutex->data.status = MS_FREE;
 	// Unlock UALARM signals
 	unlock();
 
