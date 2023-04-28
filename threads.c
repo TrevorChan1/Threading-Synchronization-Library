@@ -110,6 +110,8 @@ static void unlock(){
 	sigprocmask(SIG_UNBLOCK, &sig, NULL);
 }
 
+static int schedule_initialized = 0;
+
 // SIGALRM handler that saves current context and moves onto the next function
 static void schedule(int sig)
 {
@@ -241,10 +243,9 @@ int pthread_create(
 	void *(*start_routine) (void *), void *arg)
 {
 	// Create the timer and handler for the scheduler. Create thread 0.
-	static bool is_first_call = true;
-	if (is_first_call)
+	if (schedule_initialized == 0)
 	{
-		is_first_call = false;
+		schedule_initialized = 1;
 		scheduler_init();
 		// Save context of main thread (current only thread), leave if longjmp'd here
 		if(sigsetjmp(TCB->currentThread->currentContext, 1) != 0)
@@ -334,6 +335,12 @@ pthread_t pthread_self(void)
 // Mutex function that initializes the mutex values
 int pthread_mutex_init(pthread_mutex_t * restrict mutex,
 						const pthread_mutexattr_t * restrict attr){
+
+	if (!schedule_initialized){
+		scheduler_init();
+		schedule_initialized = 1;
+	}
+
 	// Initialize data structure for mutex (set to free and empty LL)
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 	my_mutex->data.status = MS_FREE;
