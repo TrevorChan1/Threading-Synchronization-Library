@@ -378,7 +378,7 @@ int pthread_mutex_lock(pthread_mutex_t * mutex){
 		// Lock UALARM signals
 		lock();
 		
-		my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
+		// my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
 		// Initialize thread node to be added to the linked list
 		struct thread_control_block * cur_thread = TCB->currentThread;
 
