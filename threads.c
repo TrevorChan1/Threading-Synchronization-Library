@@ -336,10 +336,9 @@ int pthread_mutex_init(pthread_mutex_t * restrict mutex,
 						const pthread_mutexattr_t * restrict attr){
 	// Initialize data structure for mutex (set to free and empty LL)
 	my_pthread_mutex_t * my_mutex = (my_pthread_mutex_t *) mutex;
-	struct my_mutex_data test;
-	test.status = MS_FREE;
-	test.head = NULL;
-	test.tail = NULL;
+	my_mutex->data.status = MS_FREE;
+	my_mutex->data.head = NULL;
+	my_mutex->data.tail = NULL;
 
 	return 0;
 }
